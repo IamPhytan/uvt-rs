@@ -1,6 +1,10 @@
 [package]
 name = "uvt"
+description = "Utilities for interacting with Uncrewed Vehicle Trajectory (UVT) files."
 version = "0.1.0"
-edition = "2024"
+edition = { workspace = true }
 
 [dependencies]
+quaternion = "2.0.0"
+rosbag = "0.6.3"
+vtkio = "0.6.3"

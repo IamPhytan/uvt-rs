@@ -1,14 +1,145 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
+use std::io::Error;
+use std::path;
+use std::{fs, time::Duration};
+
+use rosbag::{ChunkRecord, IndexRecord, MessageRecord, RosBag};
+use vtkio::Vtk;
+
+pub mod pose;
+
+pub const TRAJ_DELIM: &str = "#############################";
+
+pub struct Uvt {
+    map: vtkio::Vtk,
+    trajectory: Vec<pose::PoseStamped>,
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+impl Uvt {
+    pub fn read_file<P: AsRef<path::Path>>(path: P) -> Result<Self, Error> {
+        let fpath = path.as_ref();
+        let content = fs::read_to_string(fpath)?;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
+        let delimiter = content.find(TRAJ_DELIM).unwrap();
+        let vtk_str = content[..delimiter].trim();
+        let traj_str = content[delimiter + TRAJ_DELIM.len()..].trim();
+
+        let vtk_file =
+            Vtk::parse_legacy_be(vtk_str.as_bytes()).expect(&format!("Failed to parse vtk"));
+
+        let frame_id = traj_str
+            .lines()
+            .next()
+            .unwrap()
+            .split_once(":")
+            .expect("Expected frame_id line following 'frame_id : <value>'")
+            .1
+            .trim();
+        println!("{frame_id}");
+
+        let trajectory: Vec<pose::PoseStamped> = traj_str
+            .lines()
+            .skip(1)
+            .enumerate()
+            .map(|(i, line)| {
+                let values: Vec<f64> = line
+                    .split(",")
+                    .map(|n| {
+                        n.trim().parse::<f64>().unwrap_or_else(|_| {
+                            panic!("Failed to parse floats in line {}: '{}'", i + 2, line)
+                        })
+                    })
+                    .collect::<Vec<f64>>();
+                if values.len() != 6 {
+                    panic!(
+                        "Line {}: expected 6 values, got {} - '{}'",
+                        i + 2,
+                        values.len(),
+                        line
+                    );
+                }
+
+                // TODO: Get more info, with time
+                let header = pose::Header {
+                    frame_id: frame_id.to_string(),
+                    seq: (i + 2) as u32,
+                    stamp: Duration::from_secs(0).into(),
+                };
+
+                pose::PoseStamped::new(
+                    header,
+                    pose::Pose::from_6dof((
+                        values[0], values[1], values[2], // X, Y, Z
+                        values[3], values[4], values[5], // Roll, Pitch, Yaw
+                    )),
+                )
+            })
+            .collect();
+
+        Ok(Self {
+            map: vtk_file,
+            trajectory: trajectory,
+        })
+    }
+
+    fn retrieve_topic_messages<'a>(bag: &'a RosBag, topic: &str) -> Vec<Vec<u8>> {
+        let connections: Vec<_> = bag
+            .index_records()
+            .filter_map(Result::ok)
+            .filter_map(|record| match record {
+                IndexRecord::Connection(conn) => Some(conn),
+                _ => None,
+            })
+            .collect();
+
+        let topic_conns: Vec<_> = connections
+            .iter()
+            .filter(|conn| conn.topic == topic)
+            .collect();
+
+        let conn_id = topic_conns[0].id;
+
+        let topic_msgs: Vec<Vec<u8>> = bag
+            .chunk_records()
+            .filter_map(Result::ok)
+            .filter_map(|record| match record {
+                ChunkRecord::Chunk(chunk) => Some(chunk),
+                _ => None,
+            })
+            .map(|chunk| {
+                chunk
+                    .messages()
+                    .filter_map(Result::ok)
+                    .filter_map(|msg| match msg {
+                        MessageRecord::MessageData(msg_data) => Some(msg_data.clone()),
+                        _ => None,
+                    })
+                    .filter(|msg| msg.conn_id == conn_id)
+                    .map(|msg| msg.data.to_vec())
+                    .collect::<Vec<Vec<u8>>>()
+            })
+            .flatten()
+            .collect();
+
+        topic_msgs
+    }
+
+    pub fn read_rosbag<P: AsRef<path::Path>>(
+        path: P,
+        map_topic: &str,
+        traj_topic: &str,
+    ) -> Result<Self, Error> {
+        let bag = RosBag::new(path)?;
+
+        let map_msgs = Self::retrieve_topic_messages(&bag, map_topic);
+        let traj_msgs = Self::retrieve_topic_messages(&bag, traj_topic);
+
+        for map_msg in map_msgs {
+            println!("{:?}", map_msg);
+        }
+
+        // dbg!(map_msgs.len(), map_msgs[0]);
+        // dbg!(traj_msgs.len(), traj_msgs[0]);
+
+        todo!("Open and process rosbag file");
     }
 }
