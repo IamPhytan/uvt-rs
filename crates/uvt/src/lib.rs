@@ -5,7 +5,7 @@ use std::{fs, time::Duration};
 use rosbag::{ChunkRecord, IndexRecord, MessageRecord, RosBag};
 use vtkio::Vtk;
 
-pub mod pose;
+mod pose;
 
 pub const TRAJ_DELIM: &str = "#############################";
 

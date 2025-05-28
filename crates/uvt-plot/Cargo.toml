@@ -1,7 +1,8 @@
 [package]
 name = "uvt-plot"
+description = "Utilities for plotting and displaying UVT data."
 version = "0.1.0"
-edition = "2024"
+edition = { workspace = true }
 
 [dependencies]
 uvt = { workspace = true }
