@@ -3,6 +3,8 @@ name = "uvt-plot"
 description = "Utilities for plotting and displaying UVT data."
 version = "0.1.0"
 edition = { workspace = true }
+authors = { workspace = true }
+repository = { workspace = true }
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
