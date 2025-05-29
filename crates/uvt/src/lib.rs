@@ -10,8 +10,8 @@ mod pose;
 pub const TRAJ_DELIM: &str = "#############################";
 
 pub struct Uvt {
-    map: vtkio::Vtk,
-    trajectory: Vec<pose::PoseStamped>,
+    pub map: vtkio::Vtk,
+    pub trajectory: Vec<pose::PoseStamped>,
 }
 
 impl Uvt {
