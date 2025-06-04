@@ -3,7 +3,7 @@ use std::{path::PathBuf, str::FromStr};
 use plotters::{
     chart::{self, ChartBuilder},
     prelude::{BitMapBackend, Circle, IntoDrawingArea},
-    series::{LineSeries, PointSeries},
+    series::LineSeries,
     style::{RED, WHITE},
 };
 use uvt;
