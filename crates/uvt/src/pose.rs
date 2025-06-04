@@ -1,5 +1,5 @@
 use std::{
-    ops::{Add, Div, Mul, Sub},
+    ops::{Add, Mul, Sub},
     time::Duration,
 };
 
@@ -51,7 +51,7 @@ impl Point {
     pub fn new(x: f64, y: f64, z: f64) -> Self {
         Self { x, y, z }
     }
-    fn from_tuple(tup: (f64, f64, f64)) -> Self {
+    pub fn from_tuple(tup: (f64, f64, f64)) -> Self {
         Self {
             x: tup.0,
             y: tup.1,
@@ -90,6 +90,7 @@ impl Quaternion {
     pub fn new(x: f64, y: f64, z: f64, w: f64) -> Self {
         Self { x, y, z, w }
     }
+
     pub fn from_tuple(tup: (f64, f64, f64, f64)) -> Self {
         Self {
             x: tup.0,
@@ -98,22 +99,30 @@ impl Quaternion {
             w: tup.3,
         }
     }
-    fn square_len(&self) -> f64 {
+
+    pub fn square_len(&self) -> f64 {
         self.w * self.w + self.x * self.x + self.y * self.y + self.z * self.z
     }
-    fn norm(&self) -> f64 {
+
+    pub fn norm(&self) -> f64 {
         self.square_len().sqrt()
     }
-    fn conjugate(&self) -> Self {
+
+    pub fn conjugate(&self) -> Self {
         Self {
-            w: -self.w,
-            x: self.x,
-            y: self.y,
-            z: self.z,
+            w: self.w,
+            x: -self.x,
+            y: -self.y,
+            z: -self.z,
         }
     }
-    fn unit(&self) -> Self {
-        self.clone() * (1.0 / self.norm())
+
+    pub fn normalized(&self) -> Self {
+        let norm = self.norm();
+        if norm == 0.0 {
+            panic!("Cannot normalize a quaternion with zero norm");
+        }
+        self.clone() * (1.0 / norm)
     }
 }
 
@@ -226,7 +235,7 @@ pub struct Path {
 }
 
 impl Path {
-    fn len(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.poses.len()
     }
 }
@@ -235,8 +244,6 @@ impl Path {
 mod tests {
     use super::*;
     use std::time::Duration;
-
-    static EPSILON: f32 = 0.000001;
 
     fn quaternion_data() -> [Quaternion; 4] {
         let q1 = Quaternion {
@@ -268,7 +275,7 @@ mod tests {
     }
 
     #[test]
-    fn convert_duration_to_time() {
+    fn test_duration_time_conversion() {
         let duration = Duration::new(10, 250_000_000);
         let time: Time = duration.into();
         let converted_duration: Duration = time.into();
@@ -277,7 +284,7 @@ mod tests {
     }
 
     #[test]
-    fn create_point() {
+    fn test_point_creation() {
         let point_constructor = Point {
             x: 1.0,
             y: 2.0,
@@ -297,7 +304,7 @@ mod tests {
     }
 
     #[test]
-    fn create_quaternion() {
+    fn test_quaternion_creation() {
         let q_constructor = Quaternion {
             x: 1.0,
             y: 2.0,
@@ -320,7 +327,39 @@ mod tests {
     }
 
     #[test]
-    fn convert_quaternion() {
+    fn test_square_len_and_norm() {
+        let q = Quaternion::new(1.0, 2.0, 2.0, 1.0);
+        assert_eq!(q.square_len(), 10.0);
+        assert!((q.norm() - 10.0_f64.sqrt()).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn test_conjugate() {
+        let q = Quaternion::new(1.0, -2.0, 3.0, -4.0);
+        let conj = q.conjugate();
+        assert_eq!(conj, Quaternion::new(-1.0, 2.0, -3.0, -4.0));
+    }
+
+    #[test]
+    fn test_normalized() {
+        let q = Quaternion::new(0.0, 3.0, 0.0, 4.0);
+        let normed = q.normalized();
+        assert!((normed.norm() - 1.0).abs() < f64::EPSILON);
+        assert!((normed.x - 0.0).abs() < f64::EPSILON);
+        assert!((normed.y - 0.6).abs() < f64::EPSILON);
+        assert!((normed.z - 0.0).abs() < f64::EPSILON);
+        assert!((normed.w - 0.8).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    #[should_panic(expected = "Cannot normalize a quaternion with zero norm")]
+    fn test_normalized_zero() {
+        let q = Quaternion::new(0.0, 0.0, 0.0, 0.0);
+        let _ = q.normalized(); // should panic
+    }
+
+    #[test]
+    fn test_quaternion_conversion() {
         let [q1, q2, q3, q4] = quaternion_data();
 
         let q1_vec: quaternion::Quaternion<f64> = q1.into();
@@ -341,8 +380,8 @@ mod tests {
     }
 
     #[test]
-    fn quaternion_multiplication() {
-        let [q1, q2, q3, q4] = quaternion_data();
+    fn test_quaternion_multiplication() {
+        let [_, q2, _, _] = quaternion_data();
 
         let q2_scaled = Quaternion {
             w: 4.0,
@@ -352,5 +391,19 @@ mod tests {
         };
 
         assert_eq!(q2 * 2.0, q2_scaled);
+    }
+
+    #[test]
+    fn test_path_len() {
+        let path = Path {
+            header: Header {
+                frame_id: String::from("Coucou"),
+                seq: 0,
+                stamp: Duration::from_secs(0).into(),
+            },
+            poses: [Pose::from_6dof((0.0, 0.0, 0.0, 0.0, 0.0, 0.0)); 6].to_vec(),
+        };
+
+        assert_eq!(path.len(), 6);
     }
 }
