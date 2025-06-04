@@ -1,0 +1,12 @@
+[package]
+name = "uvt-viz3d"
+description = "Utilities for visualizing UVT data in 3D"
+version = "0.1.0"
+edition = { workspace = true }
+authors = { workspace = true }
+repository = { workspace = true }
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+kiss3d = "0.35.0"
+uvt = { workspace = true }

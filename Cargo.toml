@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/uvt", "crates/uvt-plot"]
+members = ["crates/uvt", "crates/uvt-plot", "crates/uvt-viz3d"]
 
 [workspace.package]
 edition = "2024"
