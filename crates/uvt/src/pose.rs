@@ -227,6 +227,12 @@ impl PoseStamped {
     }
 }
 
+impl Into<Pose> for PoseStamped {
+    fn into(self) -> Pose {
+        self.pose
+    }
+}
+
 // Analog to nav_msgs/msg/Path in ROS
 #[derive(Debug, Clone, PartialEq)]
 pub struct Path {
@@ -237,6 +243,14 @@ pub struct Path {
 impl Path {
     pub fn len(&self) -> usize {
         self.poses.len()
+    }
+}
+
+impl From<Vec<PoseStamped>> for Path {
+    fn from(value: Vec<PoseStamped>) -> Self {
+        let header = value[0].header.clone();
+        let poses: Vec<Pose> = value.iter().map(|p| p.clone().into()).collect();
+        Self { header, poses }
     }
 }
 
