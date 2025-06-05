@@ -58,6 +58,9 @@ impl Point {
             z: tup.2,
         }
     }
+    pub fn coords(self) -> (f64, f64, f64) {
+        (self.x, self.y, self.z)
+    }
 }
 
 /// Analog to geometry_msgs/msg/Quaternion in ROS

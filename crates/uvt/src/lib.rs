@@ -7,7 +7,7 @@ use vtkio::Vtk;
 
 mod pose;
 
-pub const TRAJ_DELIM: &str = "#############################";
+const TRAJ_DELIM: &str = "#############################";
 
 pub struct Uvt {
     pub map: vtkio::Vtk,
@@ -18,6 +18,11 @@ impl Uvt {
     pub fn read_file<P: AsRef<path::Path>>(path: P) -> Result<Self, Error> {
         let fpath = path.as_ref();
         let content = fs::read_to_string(fpath)?;
+
+        println!(
+            "Reading uvt file in {}",
+            path::absolute(fpath).unwrap().display()
+        );
 
         let delimiter = content.find(TRAJ_DELIM).unwrap();
         let vtk_str = content[..delimiter].trim();
