@@ -2323,6 +2323,7 @@ dependencies = [
  "kiss3d",
  "nalgebra 0.33.2",
  "uvt",
+ "vtkio",
 ]
 
 [[package]]

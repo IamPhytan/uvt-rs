@@ -9,3 +9,4 @@ repository = "https://github.com/IamPhytan/uvt-rs"
 
 [workspace.dependencies]
 uvt = { path = "crates/uvt" }
+vtkio = "0.6.3"
