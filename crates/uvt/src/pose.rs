@@ -5,6 +5,9 @@ use std::{
 
 use quaternion;
 
+#[cfg(feature = "glam-support")]
+use glam;
+
 // HEADER
 
 /// Analog to builtin_interfaces/msg/Time in ROS
@@ -60,6 +63,19 @@ impl Point {
     }
     pub fn coords(self) -> (f64, f64, f64) {
         (self.x, self.y, self.z)
+    }
+}
+
+impl Into<[f32; 3]> for Point {
+    fn into(self) -> [f32; 3] {
+        [self.x as f32, self.y as f32, self.z as f32]
+    }
+}
+
+#[cfg(feature = "glam-support")]
+impl Into<glam::Vec3> for Point {
+    fn into(self) -> glam::Vec3 {
+        glam::Vec3::new(self.x as f32, self.y as f32, self.z as f32)
     }
 }
 

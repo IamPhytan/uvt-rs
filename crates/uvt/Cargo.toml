@@ -10,3 +10,8 @@ repository = { workspace = true }
 quaternion = "2.0.0"
 rosbag = "0.6.3"
 vtkio = { workspace = true }
+glam = { version = "0.28", optional = true }
+
+[features]
+default = []
+glam-support = ["glam"]

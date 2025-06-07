@@ -6,6 +6,7 @@ use rosbag::{ChunkRecord, IndexRecord, MessageRecord, RosBag};
 use vtkio::Vtk;
 
 mod pose;
+pub use pose::Point;
 
 const TRAJ_DELIM: &str = "#############################";
 
