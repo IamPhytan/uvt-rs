@@ -72,8 +72,9 @@ pub fn show_uvt(uvt_file: uvt::Uvt) {
         .unwrap();
     rec.set_duration_secs("stable-time", 0f64);
 
+    // Log map
     rec.log_static(
-        "map",
+        "/map",
         &rerun::Points3D::new(
             points
                 .iter()
@@ -86,6 +87,31 @@ pub fn show_uvt(uvt_file: uvt::Uvt) {
         )
         .with_colors(colors)
         .with_radii([0.08]),
+    )
+    .unwrap();
+
+    // Log trajectory
+    let n_points = uvt_file.trajectory.len();
+    let red: Vec<[u8; 4]> = (0..n_points)
+        .into_iter()
+        .map(|_| [255, 255, 255, 255])
+        .collect();
+
+    rec.log_static(
+        "/trajectory",
+        &rerun::Points3D::new(
+            uvt_file
+                .trajectory
+                .iter()
+                .map(|pt| {
+                    let coords: [f32; 3] = pt.pose.position.into();
+                    let vec_pt: glam::Vec3 = coords.into();
+                    vec_pt
+                })
+                .into_iter(),
+        )
+        .with_colors(red)
+        .with_radii([0.25]),
     )
     .unwrap();
 }
