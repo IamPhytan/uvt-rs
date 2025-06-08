@@ -40,7 +40,6 @@ impl Uvt {
             .expect("Expected frame_id line following 'frame_id : <value>'")
             .1
             .trim();
-        println!("{frame_id}");
 
         let trajectory: Vec<pose::PoseStamped> = traj_str
             .lines()

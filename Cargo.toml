@@ -8,5 +8,5 @@ authors = ["Damien LaRocque <phicoltan@gmail.com"]
 repository = "https://github.com/IamPhytan/uvt-rs"
 
 [workspace.dependencies]
-uvt = { path = "crates/uvt" }
+uvt = { version = "0.1.0", path = "crates/uvt" }
 vtkio = "0.6.3"
