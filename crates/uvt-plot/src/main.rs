@@ -15,9 +15,9 @@ enum Mode {
 #[derive(Parser, Debug)]
 #[clap(author, version, about)]
 struct Args {
-    #[clap(long)]
+    #[clap(short, long)]
     input_file: PathBuf,
-    #[clap(short, default_value_t, value_enum)]
+    #[clap(short, long, default_value_t, value_enum)]
     mode: Mode,
 }
 
@@ -31,7 +31,7 @@ fn main() {
 
     let uv_traj = match args.mode {
         Mode::UVT => uvt::Uvt::read_file(args.input_file),
-        Mode::Rosbag => uvt::Uvt::read_rosbag(args.input_file, "/map", "/traj"),
+        Mode::Rosbag => uvt::Uvt::read_rosbag(args.input_file, "/map", "/icp_odom"),
     }
     .unwrap();
 

@@ -133,6 +133,11 @@ impl Uvt {
         map_topic: &str,
         traj_topic: &str,
     ) -> Result<Self, Error> {
+        println!(
+            "Reading rosbag file in {}",
+            path::absolute(&path).unwrap().display()
+        );
+
         let bag = RosBag::new(path)?;
 
         let map_msgs = Self::retrieve_topic_messages(&bag, map_topic);
