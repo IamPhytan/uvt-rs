@@ -3,6 +3,8 @@ use std::{
     time::Duration,
 };
 
+use crate::deserialization;
+
 use quaternion;
 
 #[cfg(feature = "glam-support")]
@@ -243,6 +245,12 @@ impl PoseStamped {
                 orientation,
             },
         }
+    }
+}
+
+impl From<Vec<u8>> for PoseStamped {
+    fn from(msg_data: Vec<u8>) -> Self {
+        todo!("Implement this function");
     }
 }
 

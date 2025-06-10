@@ -5,6 +5,7 @@ use std::{fs, time::Duration};
 use rosbag::{ChunkRecord, IndexRecord, MessageRecord, RosBag};
 use vtkio::Vtk;
 
+mod deserialization;
 mod pose;
 pub use pose::Point;
 
@@ -124,7 +125,6 @@ impl Uvt {
             })
             .flatten()
             .collect();
-
         topic_msgs
     }
 
@@ -143,9 +143,47 @@ impl Uvt {
         let map_msgs = Self::retrieve_topic_messages(&bag, map_topic);
         let traj_msgs = Self::retrieve_topic_messages(&bag, traj_topic);
 
-        for map_msg in map_msgs {
-            println!("{:?}", map_msg);
+        // TODO: Reimplement properly
+        for (i, traj_msg) in traj_msgs[0..3].iter().enumerate() {
+            println!("Index {i}");
+
+            let mut msg_buf = deserialization::MessageDataBuffer::new(traj_msg.clone());
+
+            let seq_num = msg_buf.read_u32_le().unwrap();
+            let ts_sec = msg_buf.read_u32_le().unwrap();
+            let ts_nsec = msg_buf.read_u32_le().unwrap();
+
+            let n_chars_frame = msg_buf.read_byte().unwrap() as usize;
+            let frame_id = str::from_utf8(&msg_buf.slice(n_chars_frame + 3).unwrap())
+                .unwrap()
+                .clone();
+
+            let n_chars_child = msg_buf.read_byte().unwrap() as usize;
+            let child_frame = str::from_utf8(&msg_buf.slice(n_chars_child + 3).unwrap().clone())
+                .unwrap()
+                .clone();
+
+            dbg!(seq_num);
+            dbg!(ts_sec, ts_nsec);
+            dbg!(frame_id, child_frame);
+            dbg!(msg_buf.slice(20).unwrap());
         }
+
+        // let timestamp = traj_msg[4..(4+)]
+
+        // for traj_msg in &traj_msgs {
+        //     // let msg_size = LittleEndian::read_u32(&traj_msg);
+        //     // for i in (0..8) {
+        //     //     println!("{msg_size} - {}", LittleEndian::read_u32(&traj_msg[4..]));
+        //     // }
+        //     println!("{}", traj_msg.len());
+        // }
+
+        // for map_msg in &map_msgs {
+        //     let message_size = LittleEndian::read_u16(&map_msg);
+        //     // println!("{:?} {}", message_size, &map_msg.len());
+        //     // println!("{:?}", map_msg);
+        // }
 
         // dbg!(map_msgs.len(), map_msgs[0]);
         // dbg!(traj_msgs.len(), traj_msgs[0]);
