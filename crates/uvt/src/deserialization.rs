@@ -53,9 +53,26 @@ impl MessageDataBuffer {
         self.slice(2)
             .and_then(|bytes| Some(i16::from_le_bytes(bytes.try_into().ok()?)))
     }
+    /// Read a f64 from the buffer
+    pub fn read_f64_le(&mut self) -> Option<f64> {
+        self.slice(8)
+            .and_then(|bytes| Some(f64::from_le_bytes(bytes.try_into().ok()?)))
+    }
+    /// Read a f32 from the buffer
+    pub fn read_f32_le(&mut self) -> Option<f32> {
+        self.slice(2)
+            .and_then(|bytes| Some(f32::from_le_bytes(bytes.try_into().ok()?)))
+    }
+
+    /// Read a length-prefixed UTF-8 string from the buffer (4-byte LE length + bytes)
+    pub fn read_lp_string(&mut self) -> Option<String> {
+        let strlen = self.read_u32_le()? as usize;
+        let bytes = self.slice(strlen)?;
+        Some(str::from_utf8(bytes).ok()?.to_owned())
+    }
 
     /// Read a i16 from the buffer
     pub fn read_byte(&mut self) -> Option<u8> {
-        Some(self.slice(2).unwrap()[0])
+        Some(self.slice(1).unwrap()[0])
     }
 }

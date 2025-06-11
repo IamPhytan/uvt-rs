@@ -143,30 +143,12 @@ impl Uvt {
         let map_msgs = Self::retrieve_topic_messages(&bag, map_topic);
         let traj_msgs = Self::retrieve_topic_messages(&bag, traj_topic);
 
+        let trajectory: Vec<pose::PoseStamped> =
+            traj_msgs.iter().map(|msg| msg.clone().into()).collect();
+
         // TODO: Reimplement properly
         for (i, traj_msg) in traj_msgs[0..3].iter().enumerate() {
-            println!("Index {i}");
-
-            let mut msg_buf = deserialization::MessageDataBuffer::new(traj_msg.clone());
-
-            let seq_num = msg_buf.read_u32_le().unwrap();
-            let ts_sec = msg_buf.read_u32_le().unwrap();
-            let ts_nsec = msg_buf.read_u32_le().unwrap();
-
-            let n_chars_frame = msg_buf.read_byte().unwrap() as usize;
-            let frame_id = str::from_utf8(&msg_buf.slice(n_chars_frame + 3).unwrap())
-                .unwrap()
-                .clone();
-
-            let n_chars_child = msg_buf.read_byte().unwrap() as usize;
-            let child_frame = str::from_utf8(&msg_buf.slice(n_chars_child + 3).unwrap().clone())
-                .unwrap()
-                .clone();
-
-            dbg!(seq_num);
-            dbg!(ts_sec, ts_nsec);
-            dbg!(frame_id, child_frame);
-            dbg!(msg_buf.slice(20).unwrap());
+            let pose: pose::PoseStamped = traj_msg.clone().into();
         }
 
         // let timestamp = traj_msg[4..(4+)]
