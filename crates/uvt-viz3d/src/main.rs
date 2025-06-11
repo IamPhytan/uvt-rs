@@ -24,11 +24,11 @@ struct Args {
     mode: Mode,
 
     /// Map topic
-    #[clap(short, long, default_value = "/map")]
+    #[clap(long, default_value = "/map")]
     map_topic: String,
 
     /// Trajectory topic
-    #[clap(short, long, default_value = "/icp_odom")]
+    #[clap(long, default_value = "/icp_odom")]
     traj_topic: String,
 }
 
