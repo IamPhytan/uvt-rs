@@ -6,8 +6,11 @@ use rosbag::{ChunkRecord, IndexRecord, MessageRecord, RosBag};
 use vtkio::Vtk;
 
 mod deserialization;
+mod pointcloud;
 mod pose;
 pub use pose::Point;
+
+use crate::pointcloud::DataType;
 
 const TRAJ_DELIM: &str = "#############################";
 
@@ -147,8 +150,55 @@ impl Uvt {
             traj_msgs.iter().map(|msg| msg.clone().into()).collect();
 
         // TODO: Reimplement properly
-        for (i, traj_msg) in traj_msgs[0..3].iter().enumerate() {
-            let pose: pose::PoseStamped = traj_msg.clone().into();
+        for (i, map_msg) in map_msgs[0..3].iter().enumerate() {
+            println!("Index {i}");
+
+            let mut msg_buf = deserialization::MessageDataBuffer::new(map_msg.clone());
+
+            // Message header
+            let header = pose::Header {
+                seq: msg_buf.read_u32_le().unwrap().clone(),
+                stamp: pose::Time {
+                    sec: msg_buf.read_i32_le().unwrap().clone(),
+                    nanosec: msg_buf.read_u32_le().unwrap().clone(),
+                },
+                frame_id: msg_buf.read_lp_string().unwrap(),
+            };
+
+            let height = msg_buf.read_u32_le().unwrap();
+            let width = msg_buf.read_u32_le().unwrap();
+
+            let n_fields = msg_buf.read_u32_le().unwrap();
+
+            println!("{header:?}");
+            println!("{height} {width}");
+            println!("{n_fields:?}");
+
+            let fields: Vec<pointcloud::PointField> = (0..n_fields)
+                .into_iter()
+                .map(|_| pointcloud::PointField {
+                    name: msg_buf.read_lp_string().unwrap(),
+                    offset: msg_buf.read_u32_le().unwrap(),
+                    datatype: msg_buf.read_byte().unwrap().into(),
+                    count: msg_buf.read_u32_le().unwrap(),
+                })
+                .collect();
+
+            let is_bigendian = msg_buf.read_byte().unwrap() == 1;
+            let point_step = msg_buf.read_u32_le().unwrap();
+            let row_step = msg_buf.read_u32_le().unwrap();
+
+            println!("{is_bigendian} {point_step} {row_step}");
+            println!("{} - {} remaining", msg_buf.len(), msg_buf.n_remaining());
+
+            // TODO: find a logic in data.
+            // Rely on fields
+            println!("{:?}", msg_buf.slice(30).unwrap());
+
+            // Is dense
+            println!("End: {:?}", msg_buf.seek(msg_buf.len() - 1));
+
+            // let point_cloud: pointcloud::PointCloud2 = map_msg.clone().into();
         }
 
         // let timestamp = traj_msg[4..(4+)]
