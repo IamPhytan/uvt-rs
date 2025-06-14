@@ -10,7 +10,7 @@ use quaternion;
 #[cfg(feature = "glam-support")]
 use glam;
 
-/// HEADER
+// HEADER
 
 /// Analog to builtin_interfaces/msg/Time in ROS
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -42,7 +42,7 @@ pub struct Header {
     pub frame_id: String,
 }
 
-/// POSE
+// POSE
 
 /// Analog to geometry_msgs/msg/Point in ROS
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -286,12 +286,12 @@ impl From<Vec<u8>> for PoseStamped {
             .map(|_| msg_buf.read_f64_le().unwrap())
             .collect();
 
-        let twist_linear = Point {
+        let twist_linear = Vector3 {
             x: msg_buf.read_f64_le().unwrap(),
             y: msg_buf.read_f64_le().unwrap(),
             z: msg_buf.read_f64_le().unwrap(),
         };
-        let twist_angular = Point {
+        let twist_angular = Vector3 {
             x: msg_buf.read_f64_le().unwrap(),
             y: msg_buf.read_f64_le().unwrap(),
             z: msg_buf.read_f64_le().unwrap(),
@@ -319,6 +319,54 @@ impl Into<Pose> for PoseStamped {
     }
 }
 
+// ODOMETRY
+
+/// Analog to geometry_msgs/msg/Twist in ROS
+#[derive(Debug, Clone, PartialEq)]
+pub struct Twist {
+    pub linear: Vector3,
+    pub angular: Vector3,
+}
+
+/// Analog to geometry_msgs/msg/Vector3 in ROS
+#[derive(Debug, Clone, PartialEq)]
+pub struct Vector3 {
+    x: f64,
+    y: f64,
+    z: f64,
+}
+
+/// Analog to geometry_msgs/msg/PoseWithCovariance in ROS
+#[derive(Debug, Clone, PartialEq)]
+pub struct PoseWithCovariance {
+    pub pose: Pose,
+    /// Row-major representation of the 6x6 covariance matrix
+    /// The orientation parameters use a fixed-axis representation.
+    /// In order, the parameters are:
+    /// (x, y, z, rotation about X axis, rotation about Y axis, rotation about Z axis)
+    pub covariance: [f64; 36],
+}
+
+/// Analog to geometry_msgs/msg/TwistWithCovariance in ROS
+#[derive(Debug, Clone, PartialEq)]
+pub struct TwistWithCovariance {
+    pub twist: Twist,
+    /// Row-major representation of the 6x6 covariance matrix
+    /// The orientation parameters use a fixed-axis representation.
+    /// In order, the parameters are:
+    /// (x, y, z, rotation about X axis, rotation about Y axis, rotation about Z axis)
+    pub covariance: [f64; 36],
+}
+/// Analog to nav_msgs/msg/Odometry in ROS
+#[derive(Debug, Clone, PartialEq)]
+pub struct Odometry {
+    pub header: Header,
+    pub child_frame_id: String,
+    pub pose: PoseWithCovariance,
+    pub twist: TwistWithCovariance,
+}
+
+// PATH
 /// Analog to nav_msgs/msg/Path in ROS
 #[derive(Debug, Clone, PartialEq)]
 pub struct Path {

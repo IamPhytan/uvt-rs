@@ -10,8 +10,6 @@ mod pointcloud;
 mod pose;
 pub use pose::Point;
 
-use crate::pointcloud::DataType;
-
 const TRAJ_DELIM: &str = "#############################";
 
 pub struct Uvt {
