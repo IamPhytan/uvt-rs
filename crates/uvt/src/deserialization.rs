@@ -12,6 +12,16 @@ impl MessageDataBuffer {
         Self { data, position: 0 }
     }
 
+    /// RGet total length of buffer
+    pub fn len(&self) -> usize {
+        self.data.len()
+    }
+
+    /// Get number of remaining bytes in buffer
+    pub fn n_remaining(&self) -> usize {
+        self.len() - self.position
+    }
+
     /// Read the byte at position `position`
     pub fn seek(&self, position: usize) -> Option<u8> {
         if position > self.data.len() {

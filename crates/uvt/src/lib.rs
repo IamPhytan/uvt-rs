@@ -6,8 +6,11 @@ use rosbag::{ChunkRecord, IndexRecord, MessageRecord, RosBag};
 use vtkio::Vtk;
 
 mod deserialization;
+mod pointcloud;
 mod pose;
 pub use pose::Point;
+
+use crate::pointcloud::DataType;
 
 const TRAJ_DELIM: &str = "#############################";
 
@@ -143,33 +146,19 @@ impl Uvt {
         let map_msgs = Self::retrieve_topic_messages(&bag, map_topic);
         let traj_msgs = Self::retrieve_topic_messages(&bag, traj_topic);
 
+        let maps: Vec<pointcloud::PointCloud2> =
+            map_msgs.iter().map(|msg| msg.clone().into()).collect();
         let trajectory: Vec<pose::PoseStamped> =
             traj_msgs.iter().map(|msg| msg.clone().into()).collect();
 
-        // TODO: Reimplement properly
-        for (i, traj_msg) in traj_msgs[0..3].iter().enumerate() {
-            let pose: pose::PoseStamped = traj_msg.clone().into();
-        }
+        let map_lens: Vec<usize> = maps.iter().map(|m| m.len()).collect();
+        println!("{map_lens:?}");
 
-        // let timestamp = traj_msg[4..(4+)]
+        todo!("Retrieve points from maps data field");
 
-        // for traj_msg in &traj_msgs {
-        //     // let msg_size = LittleEndian::read_u32(&traj_msg);
-        //     // for i in (0..8) {
-        //     //     println!("{msg_size} - {}", LittleEndian::read_u32(&traj_msg[4..]));
-        //     // }
-        //     println!("{}", traj_msg.len());
-        // }
-
-        // for map_msg in &map_msgs {
-        //     let message_size = LittleEndian::read_u16(&map_msg);
-        //     // println!("{:?} {}", message_size, &map_msg.len());
-        //     // println!("{:?}", map_msg);
-        // }
-
-        // dbg!(map_msgs.len(), map_msgs[0]);
-        // dbg!(traj_msgs.len(), traj_msgs[0]);
-
-        todo!("Open and process rosbag file");
+        // Ok(Self {
+        //     map: maps,
+        //     trajectory: trajectory,
+        // })
     }
 }

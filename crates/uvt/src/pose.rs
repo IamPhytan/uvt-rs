@@ -10,13 +10,13 @@ use quaternion;
 #[cfg(feature = "glam-support")]
 use glam;
 
-// HEADER
+/// HEADER
 
 /// Analog to builtin_interfaces/msg/Time in ROS
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Time {
-    sec: i32,
-    nanosec: u32,
+    pub sec: i32,
+    pub nanosec: u32,
 }
 
 impl From<Duration> for Time {
@@ -42,7 +42,7 @@ pub struct Header {
     pub frame_id: String,
 }
 
-// POSE
+/// POSE
 
 /// Analog to geometry_msgs/msg/Point in ROS
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -226,7 +226,7 @@ impl Pose {
     }
 }
 
-// Analog to geometry_msgs/msg/PoseStamped in ROS
+/// Analog to geometry_msgs/msg/PoseStamped in ROS
 #[derive(Debug, Clone, PartialEq)]
 pub struct PoseStamped {
     pub header: Header,
@@ -252,6 +252,7 @@ impl From<Vec<u8>> for PoseStamped {
     fn from(msg_data: Vec<u8>) -> Self {
         let mut msg_buf = MessageDataBuffer::new(msg_data);
 
+        // Message header
         let header = Header {
             seq: msg_buf.read_u32_le().unwrap().clone(),
             stamp: Time {
@@ -263,6 +264,7 @@ impl From<Vec<u8>> for PoseStamped {
 
         let child_frame = msg_buf.read_lp_string().unwrap();
 
+        // Message pose
         let position = Point {
             x: msg_buf.read_f64_le().unwrap(),
             y: msg_buf.read_f64_le().unwrap(),
@@ -278,6 +280,7 @@ impl From<Vec<u8>> for PoseStamped {
 
         // TODO: Implement PoseWithCovarianceStamped
         // https://docs.ros.org/en/noetic/api/geometry_msgs/html/msg/PoseWithCovarianceStamped.html
+        // 6 x 6 covariance matrix = 36 covariance values
         let pose_covariance: Vec<f64> = (0..36)
             .into_iter()
             .map(|_| msg_buf.read_f64_le().unwrap())
@@ -294,6 +297,7 @@ impl From<Vec<u8>> for PoseStamped {
             z: msg_buf.read_f64_le().unwrap(),
         };
 
+        // 6 x 6 covariance matrix = 36 covariance values
         let twist_covariance: Vec<f64> = (0..36)
             .into_iter()
             .map(|_| msg_buf.read_f64_le().unwrap())
@@ -315,7 +319,7 @@ impl Into<Pose> for PoseStamped {
     }
 }
 
-// Analog to nav_msgs/msg/Path in ROS
+/// Analog to nav_msgs/msg/Path in ROS
 #[derive(Debug, Clone, PartialEq)]
 pub struct Path {
     pub header: Header,
