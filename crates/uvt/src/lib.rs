@@ -1,9 +1,9 @@
-use std::collections::HashMap;
 use std::io::Error;
 use std::path;
 use std::{fs, time::Duration};
 
 use rosbag::{ChunkRecord, IndexRecord, MessageRecord, RosBag};
+use tqdm::Iter;
 use vtkio::Vtk;
 
 mod deserialization;
@@ -145,12 +145,25 @@ impl Uvt {
         let map_msgs = Self::retrieve_topic_messages(&bag, map_topic);
         let traj_msgs = Self::retrieve_topic_messages(&bag, traj_topic);
 
-        let maps: Vec<pointcloud::PointCloud2> =
-            map_msgs.iter().map(|msg| msg.clone().into()).collect();
-        let trajectory: Vec<pose::PoseStamped> =
-            traj_msgs.iter().map(|msg| msg.clone().into()).collect();
+        let maps: Vec<pointcloud::PointCloud2> = map_msgs
+            .iter()
+            .tqdm()
+            .desc(Some("Reading map msgs"))
+            .map(|msg| msg.clone().into())
+            .collect();
+        let trajectory: Vec<pose::PoseStamped> = traj_msgs
+            .iter()
+            .tqdm()
+            .desc(Some("Reading trajectory msgs"))
+            .map(|msg| msg.clone().into())
+            .collect();
 
-        let pointclouds: Vec<Vec<pose::Point>> = maps.iter().map(|m| m.points()).collect();
+        let pointclouds: Vec<Vec<pose::Point>> = maps
+            .iter()
+            .tqdm()
+            .desc(Some("Retrieving pointclouds"))
+            .map(|m| m.points())
+            .collect();
 
         todo!("Retrieve points from maps data field");
 

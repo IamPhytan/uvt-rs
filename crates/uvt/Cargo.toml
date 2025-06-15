@@ -11,6 +11,7 @@ quaternion = "2.0.0"
 rosbag = "0.6.3"
 vtkio = { workspace = true }
 glam = { version = "0.28", optional = true }
+tqdm = "0.7.0"
 
 [features]
 default = []
