@@ -150,7 +150,8 @@ impl Uvt {
             traj_msgs.iter().map(|msg| msg.clone().into()).collect();
 
         let map_lens: Vec<usize> = maps.iter().map(|m| m.len()).collect();
-        println!("{map_lens:?}");
+        let point_steps: Vec<u32> = maps.iter().map(|m| m.point_step).collect();
+        println!("{map_lens:?}\n{point_steps:?}");
 
         todo!("Retrieve points from maps data field");
 

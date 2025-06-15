@@ -82,10 +82,7 @@ impl From<Vec<u8>> for PointCloud2 {
         // Actual point data, size is (row_step*height)
         // TODO: Rely on fields
         let num_points = msg_buf.read_u32_le().unwrap();
-        let data: Vec<u8> = (0..num_points)
-            .into_iter()
-            .map(|_| msg_buf.read_byte().unwrap())
-            .collect();
+        let data: Vec<u8> = msg_buf.slice(num_points as usize).unwrap().to_owned();
 
         // Is dense
         let is_dense = msg_buf.read_byte().unwrap() == 1;
