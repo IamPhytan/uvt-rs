@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::io::Error;
 use std::path;
 use std::{fs, time::Duration};
@@ -149,9 +150,7 @@ impl Uvt {
         let trajectory: Vec<pose::PoseStamped> =
             traj_msgs.iter().map(|msg| msg.clone().into()).collect();
 
-        let map_lens: Vec<usize> = maps.iter().map(|m| m.len()).collect();
-        let point_steps: Vec<u32> = maps.iter().map(|m| m.point_step).collect();
-        println!("{map_lens:?}\n{point_steps:?}");
+        let pointclouds: Vec<Vec<pose::Point>> = maps.iter().map(|m| m.points()).collect();
 
         todo!("Retrieve points from maps data field");
 

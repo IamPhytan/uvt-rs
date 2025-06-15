@@ -12,7 +12,7 @@ impl MessageDataBuffer {
         Self { data, position: 0 }
     }
 
-    /// RGet total length of buffer
+    /// Get total length of buffer
     pub fn len(&self) -> usize {
         self.data.len()
     }
@@ -70,7 +70,7 @@ impl MessageDataBuffer {
     }
     /// Read a f32 from the buffer
     pub fn read_f32_le(&mut self) -> Option<f32> {
-        self.slice(2)
+        self.slice(4)
             .and_then(|bytes| Some(f32::from_le_bytes(bytes.try_into().ok()?)))
     }
 

@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::deserialization::MessageDataBuffer;
 use crate::pose;
 
@@ -40,6 +42,47 @@ impl PointCloud2 {
     pub fn len(&self) -> usize {
         self.data.len()
     }
+
+    pub fn n_points(&self) -> usize {
+        self.len() / (self.point_step as usize)
+    }
+
+    pub fn parse_data(&self) -> Vec<HashMap<String, f32>> {
+        let pt_len = self.point_step as usize;
+
+        // Use a MessageDataBuffer to deserialize data
+        let mut data_buf = MessageDataBuffer::new(self.data.to_vec());
+
+        let points = (0..self.n_points())
+            .into_iter()
+            .map(|i| {
+                // Create point from fields
+                let mut point = HashMap::new();
+                for field in &self.fields {
+                    let value = match field.datatype {
+                        DataType::FLOAT32 => data_buf.read_f32_le().unwrap(),
+                        _ => panic!("Unsupported datatype: {:?}", field.datatype),
+                    };
+                    point.insert(field.name.clone(), value);
+                }
+                point
+            })
+            .collect();
+
+        points
+    }
+
+    pub fn points(&self) -> Vec<pose::Point> {
+        let parsed = self.parse_data();
+        parsed
+            .iter()
+            .map(|pt_hashmap| pose::Point {
+                x: pt_hashmap["x"] as f64,
+                y: pt_hashmap["y"] as f64,
+                z: pt_hashmap["z"] as f64,
+            })
+            .collect()
+    }
 }
 
 impl From<Vec<u8>> for PointCloud2 {
@@ -81,8 +124,8 @@ impl From<Vec<u8>> for PointCloud2 {
 
         // Actual point data, size is (row_step*height)
         // TODO: Rely on fields
-        let num_points = msg_buf.read_u32_le().unwrap();
-        let data: Vec<u8> = msg_buf.slice(num_points as usize).unwrap().to_owned();
+        let num_data_bytes = msg_buf.read_u32_le().unwrap();
+        let data: Vec<u8> = msg_buf.slice(num_data_bytes as usize).unwrap().to_owned();
 
         // Is dense
         let is_dense = msg_buf.read_byte().unwrap() == 1;
