@@ -47,7 +47,7 @@ impl PointCloud2 {
         self.len() / (self.point_step as usize)
     }
 
-    pub fn parse_data(&self) -> Vec<HashMap<String, f32>> {
+    pub fn points(&self) -> Vec<HashMap<String, f32>> {
         let pt_len = self.point_step as usize;
 
         // Use a MessageDataBuffer to deserialize data
@@ -71,10 +71,12 @@ impl PointCloud2 {
 
         points
     }
+}
 
-    pub fn points(&self) -> Vec<pose::Point> {
-        let parsed = self.parse_data();
-        parsed
+impl Into<Vec<pose::Point>> for PointCloud2 {
+    fn into(self) -> Vec<pose::Point> {
+        let points = self.points();
+        points
             .iter()
             .map(|pt_hashmap| pose::Point {
                 x: pt_hashmap["x"] as f64,

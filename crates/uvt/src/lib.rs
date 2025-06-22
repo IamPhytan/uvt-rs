@@ -1,3 +1,4 @@
+use rayon::prelude::*;
 use std::io::Error;
 use std::path;
 use std::{fs, time::Duration};
@@ -135,10 +136,11 @@ impl Uvt {
         map_topic: &str,
         traj_topic: &str,
     ) -> Result<Self, Error> {
-        println!(
-            "Reading rosbag file in {}",
-            path::absolute(&path).unwrap().display()
-        );
+        let absolute_path = path::absolute(&path).unwrap();
+
+        println!("Reading rosbag file in {}", absolute_path.clone().display());
+
+        let fname = absolute_path.file_name().unwrap().to_str().unwrap();
 
         let bag = RosBag::new(path)?;
 
@@ -158,18 +160,40 @@ impl Uvt {
             .map(|msg| msg.clone().into())
             .collect();
 
-        let pointclouds: Vec<Vec<pose::Point>> = maps
-            .iter()
-            .tqdm()
-            .desc(Some("Retrieving pointclouds"))
-            .map(|m| m.points())
-            .collect();
+        let pointclouds: Vec<Vec<pose::Point>> =
+            maps.par_iter().map(|m| m.to_owned().into()).collect();
 
-        todo!("Retrieve points from maps data field");
+        println!("Got pointclouds");
 
-        // Ok(Self {
-        //     map: maps,
-        //     trajectory: trajectory,
-        // })
+        let last_pcloud = pointclouds[pointclouds.len() - 1].clone();
+
+        let pts: Vec<f32> = last_pcloud
+            .par_iter()
+            .map(|&pt| Into::<[f32; 3]>::into(pt))
+            .flatten()
+            .collect::<Vec<f32>>()
+            .try_into()
+            .unwrap();
+        let data = vtkio::model::DataSet::inline(vtkio::model::PolyDataPiece {
+            points: vtkio::IOBuffer::F32(pts),
+            verts: None,
+            lines: None,
+            polys: None,
+            strips: None,
+            data: vtkio::model::Attributes::new(),
+        });
+
+        let map_vtk = Vtk {
+            version: vtkio::model::Version { major: 3, minor: 0 },
+            byte_order: vtkio::model::ByteOrder::BigEndian,
+            title: String::from(format!("UVT file generated from {}", fname)),
+            file_path: None,
+            data: data,
+        };
+
+        Ok(Self {
+            map: map_vtk,
+            trajectory: trajectory,
+        })
     }
 }

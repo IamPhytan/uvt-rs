@@ -8663,6 +8663,7 @@ version = "0.1.0"
 dependencies = [
  "glam",
  "quaternion",
+ "rayon",
  "rosbag",
  "tqdm",
  "vtkio",
