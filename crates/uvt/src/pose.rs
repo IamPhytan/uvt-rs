@@ -246,10 +246,7 @@ impl PoseStamped {
             },
         }
     }
-}
-
-impl From<Vec<u8>> for PoseStamped {
-    fn from(msg_data: Vec<u8>) -> Self {
+    pub fn from_msg_data(msg_data: Vec<u8>) -> Self {
         let mut msg_buf = MessageDataBuffer::new(msg_data);
 
         // Message header

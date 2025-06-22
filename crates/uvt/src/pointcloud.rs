@@ -47,48 +47,7 @@ impl PointCloud2 {
         self.len() / (self.point_step as usize)
     }
 
-    pub fn points(&self) -> Vec<HashMap<String, f32>> {
-        let pt_len = self.point_step as usize;
-
-        // Use a MessageDataBuffer to deserialize data
-        let mut data_buf = MessageDataBuffer::new(self.data.to_vec());
-
-        let points = (0..self.n_points())
-            .into_iter()
-            .map(|i| {
-                // Create point from fields
-                let mut point = HashMap::new();
-                for field in &self.fields {
-                    let value = match field.datatype {
-                        DataType::FLOAT32 => data_buf.read_f32_le().unwrap(),
-                        _ => panic!("Unsupported datatype: {:?}", field.datatype),
-                    };
-                    point.insert(field.name.clone(), value);
-                }
-                point
-            })
-            .collect();
-
-        points
-    }
-}
-
-impl Into<Vec<pose::Point>> for PointCloud2 {
-    fn into(self) -> Vec<pose::Point> {
-        let points = self.points();
-        points
-            .iter()
-            .map(|pt_hashmap| pose::Point {
-                x: pt_hashmap["x"] as f64,
-                y: pt_hashmap["y"] as f64,
-                z: pt_hashmap["z"] as f64,
-            })
-            .collect()
-    }
-}
-
-impl From<Vec<u8>> for PointCloud2 {
-    fn from(msg_data: Vec<u8>) -> Self {
+    pub fn from_msg_data(msg_data: Vec<u8>) -> Self {
         let mut msg_buf = MessageDataBuffer::new(msg_data);
 
         // Message header
@@ -143,6 +102,45 @@ impl From<Vec<u8>> for PointCloud2 {
             data: data,
             is_dense: is_dense,
         }
+    }
+
+    pub fn points(&self) -> Vec<HashMap<String, f32>> {
+        let pt_len = self.point_step as usize;
+
+        // Use a MessageDataBuffer to deserialize data
+        let mut data_buf = MessageDataBuffer::new(self.data.to_vec());
+
+        let points = (0..self.n_points())
+            .into_iter()
+            .map(|i| {
+                // Create point from fields
+                let mut point = HashMap::new();
+                for field in &self.fields {
+                    let value = match field.datatype {
+                        DataType::FLOAT32 => data_buf.read_f32_le().unwrap(),
+                        _ => panic!("Unsupported datatype: {:?}", field.datatype),
+                    };
+                    point.insert(field.name.clone(), value);
+                }
+                point
+            })
+            .collect();
+
+        points
+    }
+}
+
+impl Into<Vec<pose::Point>> for PointCloud2 {
+    fn into(self) -> Vec<pose::Point> {
+        let points = self.points();
+        points
+            .iter()
+            .map(|pt_hashmap| pose::Point {
+                x: pt_hashmap["x"] as f64,
+                y: pt_hashmap["y"] as f64,
+                z: pt_hashmap["z"] as f64,
+            })
+            .collect()
     }
 }
 

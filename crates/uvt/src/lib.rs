@@ -151,13 +151,13 @@ impl Uvt {
             .iter()
             .tqdm()
             .desc(Some("Reading map msgs"))
-            .map(|msg| msg.clone().into())
+            .map(|msg| pointcloud::PointCloud2::from_msg_data(msg.to_vec()))
             .collect();
         let trajectory: Vec<pose::PoseStamped> = traj_msgs
             .iter()
             .tqdm()
             .desc(Some("Reading trajectory msgs"))
-            .map(|msg| msg.clone().into())
+            .map(|msg| pose::PoseStamped::from_msg_data(msg.to_vec()))
             .collect();
 
         let pointclouds: Vec<Vec<pose::Point>> =
@@ -196,4 +196,6 @@ impl Uvt {
             trajectory: trajectory,
         })
     }
+
+    // TODO: Read MCAP
 }
