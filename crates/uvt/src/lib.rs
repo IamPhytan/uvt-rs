@@ -12,6 +12,8 @@ mod pointcloud;
 mod pose;
 pub use pose::Point;
 
+use memmap2::Mmap;
+
 const TRAJ_DELIM: &str = "#############################";
 
 pub struct Uvt {
@@ -197,5 +199,85 @@ impl Uvt {
         })
     }
 
+    fn retrieve_mcap_topic_messages<'a>(mcap_map: &Mmap, topic: &str) -> Vec<Vec<u8>> {
+        let messages = mcap::MessageStream::new(&mcap_map).unwrap();
+        let topic_msgs = messages
+            .into_iter()
+            .filter_map(|stream_msg| {
+                let msg = stream_msg.unwrap();
+                let msg_topic = msg.channel.topic.as_str();
+                if msg_topic == topic {
+                    Some(msg.data.to_vec())
+                } else {
+                    None
+                }
+            })
+            .collect();
+        topic_msgs
+    }
+
     // TODO: Read MCAP
+    pub fn read_mcap<P: AsRef<path::Path>>(
+        path: P,
+        map_topic: &str,
+        traj_topic: &str,
+    ) -> Result<Self, Error> {
+        let absolute_path = path::absolute(&path).unwrap();
+        println!("Reading MCAP file in {}", absolute_path.clone().display());
+
+        let fname = absolute_path.file_name().unwrap().to_str().unwrap();
+
+        let fd = fs::File::open(path.as_ref()).expect("Couldn't open MCAP file");
+        let mapped = unsafe { Mmap::map(&fd) }?;
+        println!("MCAP file opened !");
+
+        let map_msgs = Self::retrieve_mcap_topic_messages(&mapped, map_topic);
+        let traj_msgs = Self::retrieve_mcap_topic_messages(&mapped, traj_topic);
+
+        for (i, msg_data) in map_msgs.iter().enumerate() {
+            if i < 2 {
+                let mut msg_buf = deserialization::MessageDataBuffer::new(msg_data.clone());
+
+                // Message header
+                let header = pose::Header {
+                    seq: msg_buf.read_u32_le().unwrap().clone(),
+                    stamp: pose::Time {
+                        sec: msg_buf.read_i32_le().unwrap().clone(),
+                        nanosec: msg_buf.read_u32_le().unwrap().clone(),
+                    },
+                    frame_id: msg_buf.read_lp_string().unwrap(),
+                };
+
+                // 2D structure of the point cloud
+                let height = msg_buf.read_u32_le().unwrap();
+                let width = msg_buf.read_u32_le().unwrap();
+
+                // Fields
+                let n_fields = msg_buf.read_u32_le().unwrap();
+                for field in (0..n_fields) {
+                    let name = msg_buf.read_lp_string().unwrap();
+                    let offset = msg_buf.read_u32_le().unwrap();
+                    let datatype = msg_buf.read_byte().unwrap();
+                    let count = msg_buf.read_u32_le().unwrap();
+                    println!("{name:?} {offset:?} {datatype:?} {count}");
+                }
+            }
+        }
+
+        // FIXME: Seems like pointclouds are different in MCAP
+        // let maps: Vec<pointcloud::PointCloud2> = map_msgs
+        //     .iter()
+        //     .tqdm()
+        //     .desc(Some("Reading map msgs"))
+        //     .map(|msg| pointcloud::PointCloud2::from_msg_data(msg.to_vec()))
+        //     .collect();
+        // let trajectory: Vec<pose::PoseStamped> = traj_msgs
+        //     .iter()
+        //     .tqdm()
+        //     .desc(Some("Reading trajectory msgs"))
+        //     .map(|msg| pose::PoseStamped::from_msg_data(msg.to_vec()))
+        //     .collect();
+
+        todo!("Unpack MCAP file");
+    }
 }
