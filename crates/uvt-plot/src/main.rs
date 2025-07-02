@@ -10,6 +10,8 @@ enum Mode {
     UVT,
     // Rosbag file
     Rosbag,
+    // MCAP file
+    MCAP,
 }
 
 #[derive(Parser, Debug)]
@@ -43,6 +45,7 @@ fn main() {
     let uv_traj = match args.mode {
         Mode::UVT => uvt::Uvt::read_file(args.input_file),
         Mode::Rosbag => uvt::Uvt::read_rosbag(args.input_file, &args.map_topic, &args.traj_topic),
+        Mode::MCAP => uvt::Uvt::read_mcap(args.input_file, &args.map_topic, &args.traj_topic),
     }
     .unwrap();
 
