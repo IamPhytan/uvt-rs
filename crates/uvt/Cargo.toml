@@ -13,7 +13,7 @@ vtkio = { workspace = true }
 glam = { version = "0.28", optional = true }
 tqdm = "0.7.0"
 rayon = "1.10.0"
-mcap = "0.23.0"
+mcap = "0.23.1"
 memmap2 = "0.9.5"
 
 [features]
