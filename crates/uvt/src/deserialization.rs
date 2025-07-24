@@ -1,3 +1,7 @@
+use std::fs::{File, create_dir_all};
+use std::io::{self, Write};
+use std::path::Path;
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct MessageDataBuffer {
     // Buffer Data
@@ -20,6 +24,47 @@ impl MessageDataBuffer {
     /// Get number of remaining bytes in buffer
     pub fn n_remaining(&self) -> usize {
         self.len() - self.position
+    }
+
+    /// Dump data to file
+    pub fn dump_to_file(&self, path: &str) -> io::Result<()> {
+        let path = Path::new(&path);
+
+        // Ensure the parent directory exists
+        if let Some(parent) = path.parent() {
+            create_dir_all(parent)?;
+        }
+
+        let mut file = File::create(path)?;
+        let bytes = &self.data;
+
+        for (i, chunk) in bytes.chunks(16).enumerate() {
+            // Hex section
+            write!(file, "{:08x}:", i * 16)?;
+            for b in chunk {
+                write!(file, " {:02x}", b)?;
+            }
+
+            // Pad to align ASCII section
+            for _ in chunk.len()..16 {
+                write!(file, "   ")?; // 3 spaces
+            }
+
+            // ASCII section
+            write!(file, "  |")?;
+            for b in chunk {
+                let c = *b;
+                let printable = if (0x20..=0x7E).contains(&c) {
+                    c as char
+                } else {
+                    '.'
+                };
+                write!(file, "{}", printable)?;
+            }
+            writeln!(file, "|")?;
+        }
+
+        Ok(())
     }
 
     /// Read the byte at position `position`
