@@ -1,5 +1,5 @@
 use std::fs::{File, create_dir_all};
-use std::io::{self, Write};
+use std::io::{self, Error, ErrorKind, Write};
 use std::path::Path;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -89,45 +89,95 @@ impl MessageDataBuffer {
     }
 
     /// Read a u32 from the buffer
-    pub fn read_u32_le(&mut self) -> Option<u32> {
-        self.slice(4)
-            .and_then(|bytes| Some(u32::from_le_bytes(bytes.try_into().ok()?)))
+    pub fn read_u32_le(&mut self) -> Result<u32, io::Error> {
+        let bytes = self
+            .slice(4)
+            .ok_or_else(|| Error::new(ErrorKind::UnexpectedEof, "Not enough bytes to read u32"))?;
+
+        let bytes_arr: [u8; 4] = bytes
+            .try_into()
+            .map_err(|_| Error::new(ErrorKind::InvalidData, "Failed to convert bytes to u32"))?;
+
+        Ok(u32::from_le_bytes(bytes_arr))
     }
     /// Read a u16 from the buffer
-    pub fn read_u16_le(&mut self) -> Option<u16> {
-        self.slice(2)
-            .and_then(|bytes| Some(u16::from_le_bytes(bytes.try_into().ok()?)))
+    pub fn read_u16_le(&mut self) -> Result<u16, io::Error> {
+        let bytes = self.slice(2).ok_or_else(|| {
+            Error::new(ErrorKind::UnexpectedEof, "Not enough bytes to read a u16")
+        })?;
+        let bytes_arr: [u8; 2] = bytes
+            .try_into()
+            .map_err(|_| Error::new(ErrorKind::InvalidData, "Failed to convert bytes to u16"))?;
+
+        Ok(u16::from_le_bytes(bytes_arr))
     }
     /// Read a i32 from the buffer
-    pub fn read_i32_le(&mut self) -> Option<i32> {
-        self.slice(4)
-            .and_then(|bytes| Some(i32::from_le_bytes(bytes.try_into().ok()?)))
+    pub fn read_i32_le(&mut self) -> Result<i32, io::Error> {
+        let bytes = self.slice(4).ok_or_else(|| {
+            Error::new(ErrorKind::UnexpectedEof, "Not enough bytes to read a i32")
+        })?;
+        let bytes_arr: [u8; 4] = bytes
+            .try_into()
+            .map_err(|_| Error::new(ErrorKind::InvalidData, "Failed to convert bytes to i32"))?;
+
+        Ok(i32::from_le_bytes(bytes_arr))
     }
     /// Read a i16 from the buffer
-    pub fn read_i16_le(&mut self) -> Option<i16> {
-        self.slice(2)
-            .and_then(|bytes| Some(i16::from_le_bytes(bytes.try_into().ok()?)))
+    pub fn read_i16_le(&mut self) -> Result<i16, io::Error> {
+        let bytes = self.slice(2).ok_or_else(|| {
+            Error::new(ErrorKind::UnexpectedEof, "Not enough bytes to read a i16")
+        })?;
+        let bytes_arr: [u8; 2] = bytes
+            .try_into()
+            .map_err(|_| Error::new(ErrorKind::InvalidData, "Failed to convert bytes to i16"))?;
+
+        Ok(i16::from_le_bytes(bytes_arr))
     }
     /// Read a f64 from the buffer
-    pub fn read_f64_le(&mut self) -> Option<f64> {
-        self.slice(8)
-            .and_then(|bytes| Some(f64::from_le_bytes(bytes.try_into().ok()?)))
+    pub fn read_f64_le(&mut self) -> Result<f64, io::Error> {
+        let bytes = self.slice(8).ok_or_else(|| {
+            Error::new(ErrorKind::UnexpectedEof, "Not enough bytes to read a f64")
+        })?;
+
+        let bytes_arr: [u8; 8] = bytes
+            .try_into()
+            .map_err(|_| Error::new(ErrorKind::InvalidData, "Failed to convert bytes to f64"))?;
+
+        Ok(f64::from_le_bytes(bytes_arr))
     }
     /// Read a f32 from the buffer
-    pub fn read_f32_le(&mut self) -> Option<f32> {
-        self.slice(4)
-            .and_then(|bytes| Some(f32::from_le_bytes(bytes.try_into().ok()?)))
+    pub fn read_f32_le(&mut self) -> Result<f32, io::Error> {
+        let bytes = self.slice(4).ok_or_else(|| {
+            Error::new(ErrorKind::UnexpectedEof, "Not enough bytes to read a f32")
+        })?;
+
+        let bytes_arr: [u8; 4] = bytes
+            .try_into()
+            .map_err(|_| Error::new(ErrorKind::InvalidData, "Failed to convert bytes to f32"))?;
+
+        Ok(f32::from_le_bytes(bytes_arr))
     }
 
     /// Read a length-prefixed UTF-8 string from the buffer (4-byte LE length + bytes)
-    pub fn read_lp_string(&mut self) -> Option<String> {
+    pub fn read_lp_string(&mut self) -> Result<String, io::Error> {
         let strlen = self.read_u32_le()? as usize;
-        let bytes = self.slice(strlen)?;
-        Some(str::from_utf8(bytes).ok()?.to_owned())
+        let bytes = self.slice(strlen).ok_or_else(|| {
+            Error::new(
+                ErrorKind::UnexpectedEof,
+                "Not enough bytes to read a string defined by the length prefix",
+            )
+        })?;
+        let s = str::from_utf8(bytes)
+            .map_err(|_| Error::new(ErrorKind::InvalidData, "Invalid UTF-8 string"))?;
+
+        Ok(s.to_owned())
     }
 
     /// Read a i16 from the buffer
-    pub fn read_byte(&mut self) -> Option<u8> {
-        Some(self.slice(1).unwrap()[0])
+    pub fn read_byte(&mut self) -> Result<u8, io::Error> {
+        let bytes = self.slice(1).ok_or_else(|| {
+            Error::new(ErrorKind::UnexpectedEof, "Not enough bytes to read a byte")
+        })?;
+        Ok(bytes[0])
     }
 }
