@@ -2,6 +2,17 @@ use std::collections::HashMap;
 
 use crate::deserialization::MessageDataBuffer;
 use crate::pose;
+use std::io;
+
+pub trait PointCloud2Deserializer {
+    fn read_header(&mut self) -> Result<pose::Header, io::Error>;
+    fn read_u32_le(&mut self) -> Result<u32, io::Error>;
+    fn read_byte(&mut self) -> Result<u8, io::Error>;
+    fn read_point_fields(&mut self) -> Result<Vec<PointField>, io::Error>;
+    fn read_lp_string(&mut self) -> Result<String, io::Error>;
+    fn read_point_field(&mut self) -> Result<PointField, io::Error>;
+    fn read_data(&mut self) -> Result<Vec<u8>, io::Error>;
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum DataType {
@@ -38,6 +49,45 @@ pub struct PointCloud2 {
     pub is_dense: bool,
 }
 
+pub fn parse_pointcloud<D: PointCloud2Deserializer>(
+    mut d: D,
+) -> Result<PointCloud2, std::io::Error> {
+    // Message header
+    let header = d.read_header()?;
+
+    // 2D structure of the point cloud
+    let height = d.read_u32_le()?;
+    let width = d.read_u32_le()?;
+
+    // Fields
+    let fields = d.read_point_fields()?;
+
+    // Is this data bigendian?
+    let is_bigendian = d.read_byte()? == 1;
+    // Length of a point in bytes
+    let point_step = d.read_u32_le()?;
+    // Length of a row in bytes
+    let row_step = d.read_u32_le()?;
+
+    // Actual pointcloud data
+    let data = d.read_data()?;
+
+    // Is dense
+    let is_dense = d.read_byte()? == 1;
+
+    Ok(PointCloud2 {
+        header,
+        height,
+        width,
+        fields,
+        is_bigendian,
+        point_step,
+        row_step,
+        data,
+        is_dense,
+    })
+}
+
 impl PointCloud2 {
     pub fn len(&self) -> usize {
         self.data.len()
@@ -45,63 +95,6 @@ impl PointCloud2 {
 
     pub fn n_points(&self) -> usize {
         self.len() / (self.point_step as usize)
-    }
-
-    pub fn from_msg_data(msg_data: Vec<u8>) -> Self {
-        let mut msg_buf = MessageDataBuffer::new(msg_data);
-
-        // Message header
-        let header = pose::Header {
-            seq: msg_buf.read_u32_le().unwrap().clone(),
-            stamp: pose::Time {
-                sec: msg_buf.read_i32_le().unwrap().clone(),
-                nanosec: msg_buf.read_u32_le().unwrap().clone(),
-            },
-            frame_id: msg_buf.read_lp_string().unwrap(),
-        };
-
-        // 2D structure of the point cloud
-        let height = msg_buf.read_u32_le().unwrap();
-        let width = msg_buf.read_u32_le().unwrap();
-
-        // Fields
-        let n_fields = msg_buf.read_u32_le().unwrap();
-        let fields: Vec<PointField> = (0..n_fields)
-            .into_iter()
-            .map(|_| PointField {
-                name: msg_buf.read_lp_string().unwrap(),
-                offset: msg_buf.read_u32_le().unwrap(),
-                datatype: msg_buf.read_byte().unwrap().into(),
-                count: msg_buf.read_u32_le().unwrap(),
-            })
-            .collect();
-
-        // Is this data bigendian?
-        let is_bigendian = msg_buf.read_byte().unwrap() == 1;
-        // Length of a point in bytes
-        let point_step = msg_buf.read_u32_le().unwrap();
-        // Length of a row in bytes
-        let row_step = msg_buf.read_u32_le().unwrap();
-
-        // Actual point data, size is (row_step*height)
-        // TODO: Rely on fields
-        let num_data_bytes = msg_buf.read_u32_le().unwrap();
-        let data: Vec<u8> = msg_buf.slice(num_data_bytes as usize).unwrap().to_owned();
-
-        // Is dense
-        let is_dense = msg_buf.read_byte().unwrap() == 1;
-
-        Self {
-            header: header,
-            height: height,
-            width: width,
-            fields: fields,
-            is_bigendian: is_bigendian,
-            point_step: point_step,
-            row_step: row_step,
-            data: data,
-            is_dense: is_dense,
-        }
     }
 
     pub fn points(&self) -> Vec<HashMap<String, f64>> {

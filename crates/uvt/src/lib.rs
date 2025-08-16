@@ -7,7 +7,9 @@ use rosbag::{ChunkRecord, IndexRecord, MessageRecord, RosBag};
 use tqdm::Iter;
 use vtkio::Vtk;
 
+mod bag;
 mod deserialization;
+// mod mcap;
 mod pointcloud;
 mod pose;
 pub use pose::Point;
@@ -153,7 +155,12 @@ impl Uvt {
             .iter()
             .tqdm()
             .desc(Some("Reading map msgs"))
-            .map(|msg| pointcloud::PointCloud2::from_msg_data(msg.to_vec()))
+            .map(|msg| {
+                pointcloud::parse_pointcloud::<bag::BagDeserializer>(bag::BagDeserializer::new(
+                    msg.to_vec(),
+                ))
+                .unwrap()
+            })
             .collect();
         let trajectory: Vec<pose::PoseStamped> = traj_msgs
             .iter()
