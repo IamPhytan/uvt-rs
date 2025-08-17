@@ -10,6 +10,7 @@ pub trait PointCloud2Deserializer {
     fn read_byte(&mut self) -> Result<u8, io::Error>;
     fn read_point_fields(&mut self) -> Result<Vec<PointField>, io::Error>;
     fn read_lp_string(&mut self) -> Result<String, io::Error>;
+    fn read_null_terminated_string(&mut self) -> Result<String, io::Error>;
     fn read_point_field(&mut self) -> Result<PointField, io::Error>;
     fn read_data(&mut self) -> Result<Vec<u8>, io::Error>;
 }

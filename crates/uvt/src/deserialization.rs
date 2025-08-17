@@ -158,6 +158,14 @@ impl MessageDataBuffer {
         Ok(f32::from_le_bytes(bytes_arr))
     }
 
+    /// Read a byte from the buffer
+    pub fn read_byte(&mut self) -> Result<u8, io::Error> {
+        let bytes = self.slice(1).ok_or_else(|| {
+            Error::new(ErrorKind::UnexpectedEof, "Not enough bytes to read a byte")
+        })?;
+        Ok(bytes[0])
+    }
+
     /// Read a length-prefixed UTF-8 string from the buffer (4-byte LE length + bytes)
     pub fn read_lp_string(&mut self) -> Result<String, io::Error> {
         let strlen = self.read_u32_le()? as usize;
@@ -173,11 +181,21 @@ impl MessageDataBuffer {
         Ok(s.to_owned())
     }
 
-    /// Read a i16 from the buffer
-    pub fn read_byte(&mut self) -> Result<u8, io::Error> {
-        let bytes = self.slice(1).ok_or_else(|| {
-            Error::new(ErrorKind::UnexpectedEof, "Not enough bytes to read a byte")
+    pub fn read_null_terminated_string(&mut self) -> Result<String, io::Error> {
+        let mut bytes = Vec::new();
+        while let b = self.read_byte()? {
+            if b == 0 {
+                break;
+            }
+            bytes.push(b);
+        }
+        println!("{:?}", bytes);
+        let s = String::from_utf8(bytes).map_err(|_| {
+            Error::new(
+                ErrorKind::InvalidData,
+                "Bytes cannot be converted to string",
+            )
         })?;
-        Ok(bytes[0])
+        Ok(s)
     }
 }

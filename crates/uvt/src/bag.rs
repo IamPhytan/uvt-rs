@@ -18,6 +18,7 @@ impl BagDeserializer {
 
 impl PointCloud2Deserializer for BagDeserializer {
     fn read_header(&mut self) -> Result<pose::Header, std::io::Error> {
+        // TODO: Remove unwraps
         Ok(pose::Header {
             seq: self.buf.read_u32_le().unwrap().clone(),
             stamp: pose::Time {
@@ -38,6 +39,10 @@ impl PointCloud2Deserializer for BagDeserializer {
 
     fn read_lp_string(&mut self) -> Result<String, std::io::Error> {
         self.buf.read_lp_string()
+    }
+
+    fn read_null_terminated_string(&mut self) -> Result<String, std::io::Error> {
+        self.buf.read_null_terminated_string()
     }
 
     fn read_point_field(&mut self) -> Result<pointcloud::PointField, std::io::Error> {
