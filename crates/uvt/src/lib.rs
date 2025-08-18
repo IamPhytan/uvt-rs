@@ -3,13 +3,15 @@ use std::io::Error;
 use std::path;
 use std::{fs, time::Duration};
 
+extern crate mcap as mcap_crate;
+
 use rosbag::{ChunkRecord, IndexRecord, MessageRecord, RosBag};
 use tqdm::Iter;
 use vtkio::Vtk;
 
 mod bag;
 mod deserialization;
-// mod mcap;
+mod mcap;
 mod pointcloud;
 mod pose;
 pub use pose::Point;
@@ -207,7 +209,7 @@ impl Uvt {
     }
 
     fn retrieve_mcap_topic_messages<'a>(mcap_map: &Mmap, topic: &str) -> Vec<Vec<u8>> {
-        let messages = mcap::MessageStream::new(&mcap_map).unwrap();
+        let messages = mcap_crate::MessageStream::new(&mcap_map).unwrap();
         let topic_msgs = messages
             .into_iter()
             .filter_map(|stream_msg| {
@@ -241,43 +243,27 @@ impl Uvt {
         let map_msgs = Self::retrieve_mcap_topic_messages(&mapped, map_topic);
         let traj_msgs = Self::retrieve_mcap_topic_messages(&mapped, traj_topic);
 
-        for (i, msg_data) in map_msgs.iter().enumerate() {
+        // Collect maps and trajectory
+        let maps: Vec<pointcloud::PointCloud2> = map_msgs
+            .iter()
+            .tqdm()
+            .desc(Some("Reading map msgs"))
+            .map(|msg| {
+                pointcloud::parse_pointcloud::<mcap::McapDeserializer>(mcap::McapDeserializer::new(
+                    msg.to_vec(),
+                ))
+                .unwrap()
+            })
+            .collect();
+
+        for (i, msg_data) in traj_msgs.iter().enumerate() {
             if i < 2 {
                 let mut msg_buf = deserialization::MessageDataBuffer::new(msg_data.clone());
 
-                // Message header
-                let header = pose::Header {
-                    seq: msg_buf.read_u32_le().unwrap().clone(),
-                    stamp: pose::Time {
-                        sec: msg_buf.read_i32_le().unwrap().clone(),
-                        nanosec: msg_buf.read_u32_le().unwrap().clone(),
-                    },
-                    frame_id: msg_buf.read_lp_string().unwrap(),
-                };
-
-                // 2D structure of the point cloud
-                let height = msg_buf.read_u32_le().unwrap();
-                let width = msg_buf.read_u32_le().unwrap();
-
-                // Fields
-                let n_fields = msg_buf.read_u32_le().unwrap();
-                for field in (0..n_fields) {
-                    let name = msg_buf.read_lp_string().unwrap();
-                    let offset = msg_buf.read_u32_le().unwrap();
-                    let datatype = msg_buf.read_byte().unwrap();
-                    let count = msg_buf.read_u32_le().unwrap();
-                    println!("{name:?} {offset:?} {datatype:?} {count}");
-                }
+                let _ = msg_buf.dump_to_file(format!("data/traj-{}.hex", fname).as_str());
             }
         }
 
-        // FIXME: Seems like pointclouds are different in MCAP
-        // let maps: Vec<pointcloud::PointCloud2> = map_msgs
-        //     .iter()
-        //     .tqdm()
-        //     .desc(Some("Reading map msgs"))
-        //     .map(|msg| pointcloud::PointCloud2::from_msg_data(msg.to_vec()))
-        //     .collect();
         // let trajectory: Vec<pose::PoseStamped> = traj_msgs
         //     .iter()
         //     .tqdm()

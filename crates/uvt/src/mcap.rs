@@ -4,11 +4,11 @@ use crate::deserialization::MessageDataBuffer;
 use crate::pointcloud::{PointCloud2Deserializer, PointField};
 use crate::{pointcloud, pose};
 
-pub struct BagDeserializer {
+pub struct McapDeserializer {
     buf: MessageDataBuffer,
 }
 
-impl BagDeserializer {
+impl McapDeserializer {
     pub fn new(data: Vec<u8>) -> Self {
         Self {
             buf: MessageDataBuffer::new(data),
@@ -16,14 +16,17 @@ impl BagDeserializer {
     }
 }
 
-impl PointCloud2Deserializer for BagDeserializer {
+impl PointCloud2Deserializer for McapDeserializer {
     fn read_header(&mut self) -> Result<pose::Header, std::io::Error> {
         // TODO: Remove unwraps
+
+        // Ignore first 4 bytes
+        let _ = self.buf.read_u32_le();
         Ok(pose::Header {
-            seq: self.buf.read_u32_le()?.clone(),
+            seq: 0,
             stamp: pose::Time {
-                sec: self.buf.read_i32_le()?.clone(),
-                nanosec: self.buf.read_u32_le()?.clone(),
+                sec: self.buf.read_i32_le()?,
+                nanosec: self.read_u32_le()?,
             },
             frame_id: self.read_lp_string()?,
         })
@@ -34,11 +37,20 @@ impl PointCloud2Deserializer for BagDeserializer {
     }
 
     fn read_byte(&mut self) -> Result<u8, std::io::Error> {
-        self.buf.read_byte()
+        let b = self.buf.read_byte();
+        let _ = self.buf.slice(3);
+        b
     }
 
     fn read_lp_string(&mut self) -> Result<String, std::io::Error> {
-        self.buf.read_lp_string()
+        let s = self.buf.read_lp_string()?;
+        // Remove null termination byte
+        let strdata = s.trim_end_matches("\0").to_string();
+        // Respect 4-byte data alignment of CDR
+        let strlen = s.len();
+        let padding = (4 - (strlen % 4));
+        let _ = self.buf.slice(padding);
+        Ok(strdata)
     }
 
     fn read_null_terminated_string(&mut self) -> Result<String, std::io::Error> {
@@ -47,10 +59,10 @@ impl PointCloud2Deserializer for BagDeserializer {
 
     fn read_point_field(&mut self) -> Result<pointcloud::PointField, std::io::Error> {
         Ok(PointField {
-            name: self.buf.read_lp_string().unwrap(),
-            offset: self.buf.read_u32_le().unwrap(),
-            datatype: self.buf.read_byte().unwrap().into(),
-            count: self.buf.read_u32_le().unwrap(),
+            name: self.read_lp_string()?,
+            offset: self.read_u32_le()?,
+            datatype: self.read_byte()?.into(),
+            count: self.read_u32_le()?,
         })
     }
 
