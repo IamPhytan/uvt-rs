@@ -1,5 +1,5 @@
 use rayon::prelude::*;
-use std::io::Error;
+use std::io::{Error, ErrorKind};
 use std::path;
 use std::{fs, time::Duration};
 
@@ -309,5 +309,36 @@ impl Uvt {
             map: map_vtk,
             trajectory: trajectory,
         })
+    }
+
+    pub fn write_file<P: AsRef<path::Path>>(&self, path: P) -> Result<(), std::io::Error> {
+        let export_path = path::absolute(path)?.clone();
+        println!("Writing file to {}", export_path.display());
+
+        let mut map_output = String::new();
+        Vtk::write_legacy_ascii(self.map.clone(), &mut map_output)
+            .expect(&format!("Failed to write file"));
+
+        let map_str: Vec<String> = map_output.split("\n").map(|s| s.to_string()).collect();
+
+        println!("{:?}", map_str.len());
+
+        let uvt_trajectory = self.trajectory.clone();
+
+        // Retrieve frame ID
+        let frame_id = uvt_trajectory
+            .into_iter()
+            .next()
+            .ok_or(Error::new(ErrorKind::InvalidData, "Missing poses"))?
+            .header
+            .frame_id;
+        let frame_str = format!("frame_id : {}", frame_id);
+
+        println!("{:?}", frame_str);
+
+        fs::write(export_path, map_output)?;
+
+        Ok(())
+        // todo!("Implement writing");
     }
 }
