@@ -1,8 +1,9 @@
 use std::io::{Error, ErrorKind};
 
-use crate::deserialization::MessageDataBuffer;
+use crate::deserialization::{BufferReader, MessageDataBuffer};
 use crate::pointcloud::{PointCloud2Deserializer, PointField};
-use crate::{pointcloud, pose};
+use crate::pose;
+use crate::trajectory::TrajectoryDeserializer;
 
 pub struct BagDeserializer {
     buf: MessageDataBuffer,
@@ -16,21 +17,13 @@ impl BagDeserializer {
     }
 }
 
-impl PointCloud2Deserializer for BagDeserializer {
-    fn read_header(&mut self) -> Result<pose::Header, std::io::Error> {
-        // TODO: Remove unwraps
-        Ok(pose::Header {
-            seq: self.buf.read_u32_le()?.clone(),
-            stamp: pose::Time {
-                sec: self.buf.read_i32_le()?.clone(),
-                nanosec: self.buf.read_u32_le()?.clone(),
-            },
-            frame_id: self.read_lp_string()?,
-        })
-    }
-
+impl BufferReader for BagDeserializer {
     fn read_u32_le(&mut self) -> Result<u32, std::io::Error> {
         self.buf.read_u32_le()
+    }
+
+    fn read_f64_le(&mut self) -> Result<f64, std::io::Error> {
+        self.buf.read_f64_le()
     }
 
     fn read_byte(&mut self) -> Result<u8, std::io::Error> {
@@ -45,16 +38,29 @@ impl PointCloud2Deserializer for BagDeserializer {
         self.buf.read_null_terminated_string()
     }
 
-    fn read_point_field(&mut self) -> Result<pointcloud::PointField, std::io::Error> {
+    fn read_header(&mut self) -> Result<pose::Header, std::io::Error> {
+        Ok(pose::Header {
+            seq: self.buf.read_u32_le()?.clone(),
+            stamp: pose::Time {
+                sec: self.buf.read_i32_le()?.clone(),
+                nanosec: self.buf.read_u32_le()?.clone(),
+            },
+            frame_id: self.read_lp_string()?,
+        })
+    }
+}
+
+impl PointCloud2Deserializer for BagDeserializer {
+    fn read_point_field(&mut self) -> Result<PointField, std::io::Error> {
         Ok(PointField {
-            name: self.buf.read_lp_string().unwrap(),
-            offset: self.buf.read_u32_le().unwrap(),
-            datatype: self.buf.read_byte().unwrap().into(),
-            count: self.buf.read_u32_le().unwrap(),
+            name: self.read_lp_string()?,
+            offset: self.buf.read_u32_le()?,
+            datatype: self.buf.read_byte()?.into(),
+            count: self.buf.read_u32_le()?,
         })
     }
 
-    fn read_point_fields(&mut self) -> Result<Vec<pointcloud::PointField>, std::io::Error> {
+    fn read_point_fields(&mut self) -> Result<Vec<PointField>, std::io::Error> {
         let n_fields = self.buf.read_u32_le()?;
         let fields = (0..n_fields)
             .into_iter()
@@ -79,5 +85,37 @@ impl PointCloud2Deserializer for BagDeserializer {
             })?
             .to_vec();
         Ok(data)
+    }
+}
+
+impl TrajectoryDeserializer for BagDeserializer {
+    fn read_position(&mut self) -> Result<pose::Point, std::io::Error> {
+        Ok(pose::Point {
+            x: self.buf.read_f64_le()?,
+            y: self.buf.read_f64_le()?,
+            z: self.buf.read_f64_le()?,
+        })
+    }
+    fn read_orientation(&mut self) -> Result<pose::Quaternion, std::io::Error> {
+        Ok(pose::Quaternion {
+            x: self.buf.read_f64_le()?,
+            y: self.buf.read_f64_le()?,
+            z: self.buf.read_f64_le()?,
+            w: self.buf.read_f64_le()?,
+        })
+    }
+    fn read_covariance(&mut self) -> Result<Vec<f64>, std::io::Error> {
+        (0..36)
+            .into_iter()
+            .map(|_| self.buf.read_f64_le())
+            .into_iter()
+            .collect()
+    }
+    fn read_vector(&mut self) -> Result<pose::Vector3, std::io::Error> {
+        Ok(pose::Vector3::new(
+            self.buf.read_f64_le()?,
+            self.buf.read_f64_le()?,
+            self.buf.read_f64_le()?,
+        ))
     }
 }

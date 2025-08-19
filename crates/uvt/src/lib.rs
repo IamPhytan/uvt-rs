@@ -14,6 +14,7 @@ mod deserialization;
 mod mcap;
 mod pointcloud;
 mod pose;
+mod trajectory;
 pub use pose::Point;
 
 use memmap2::Mmap;

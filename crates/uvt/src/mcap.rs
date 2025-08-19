@@ -1,6 +1,6 @@
 use std::io::{Error, ErrorKind};
 
-use crate::deserialization::MessageDataBuffer;
+use crate::deserialization::{BufferReader, MessageDataBuffer};
 use crate::pointcloud::{PointCloud2Deserializer, PointField};
 use crate::{pointcloud, pose};
 
@@ -16,24 +16,13 @@ impl McapDeserializer {
     }
 }
 
-impl PointCloud2Deserializer for McapDeserializer {
-    fn read_header(&mut self) -> Result<pose::Header, std::io::Error> {
-        // TODO: Remove unwraps
-
-        // Ignore first 4 bytes
-        let _ = self.buf.read_u32_le();
-        Ok(pose::Header {
-            seq: 0,
-            stamp: pose::Time {
-                sec: self.buf.read_i32_le()?,
-                nanosec: self.read_u32_le()?,
-            },
-            frame_id: self.read_lp_string()?,
-        })
-    }
-
+impl BufferReader for McapDeserializer {
     fn read_u32_le(&mut self) -> Result<u32, std::io::Error> {
         self.buf.read_u32_le()
+    }
+
+    fn read_f64_le(&mut self) -> Result<f64, std::io::Error> {
+        self.buf.read_f64_le()
     }
 
     fn read_byte(&mut self) -> Result<u8, std::io::Error> {
@@ -48,7 +37,7 @@ impl PointCloud2Deserializer for McapDeserializer {
         let strdata = s.trim_end_matches("\0").to_string();
         // Respect 4-byte data alignment of CDR
         let strlen = s.len();
-        let padding = (4 - (strlen % 4));
+        let padding = 4 - (strlen % 4);
         let _ = self.buf.slice(padding);
         Ok(strdata)
     }
@@ -57,6 +46,23 @@ impl PointCloud2Deserializer for McapDeserializer {
         self.buf.read_null_terminated_string()
     }
 
+    fn read_header(&mut self) -> Result<pose::Header, std::io::Error> {
+        // TODO: Remove unwraps
+
+        // Ignore first 4 bytes
+        let _ = self.buf.read_u32_le();
+        Ok(pose::Header {
+            seq: 0,
+            stamp: pose::Time {
+                sec: self.buf.read_i32_le()?,
+                nanosec: self.read_u32_le()?,
+            },
+            frame_id: self.read_lp_string()?,
+        })
+    }
+}
+
+impl PointCloud2Deserializer for McapDeserializer {
     fn read_point_field(&mut self) -> Result<pointcloud::PointField, std::io::Error> {
         Ok(PointField {
             name: self.read_lp_string()?,

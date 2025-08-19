@@ -1,3 +1,4 @@
+use crate::pose;
 use std::fs::{File, create_dir_all};
 use std::io::{self, Error, ErrorKind, Write};
 use std::path::Path;
@@ -199,4 +200,13 @@ impl MessageDataBuffer {
         })?;
         Ok(s)
     }
+}
+
+pub trait BufferReader {
+    fn read_u32_le(&mut self) -> Result<u32, std::io::Error>;
+    fn read_f64_le(&mut self) -> Result<f64, std::io::Error>;
+    fn read_byte(&mut self) -> Result<u8, std::io::Error>;
+    fn read_lp_string(&mut self) -> Result<String, std::io::Error>;
+    fn read_null_terminated_string(&mut self) -> Result<String, std::io::Error>;
+    fn read_header(&mut self) -> Result<pose::Header, std::io::Error>;
 }

@@ -1,17 +1,12 @@
 use std::collections::HashMap;
 
-use crate::deserialization::MessageDataBuffer;
+use crate::deserialization::{BufferReader, MessageDataBuffer};
 use crate::pose;
 use std::io;
 
-pub trait PointCloud2Deserializer {
-    fn read_header(&mut self) -> Result<pose::Header, io::Error>;
-    fn read_u32_le(&mut self) -> Result<u32, io::Error>;
-    fn read_byte(&mut self) -> Result<u8, io::Error>;
-    fn read_point_fields(&mut self) -> Result<Vec<PointField>, io::Error>;
-    fn read_lp_string(&mut self) -> Result<String, io::Error>;
-    fn read_null_terminated_string(&mut self) -> Result<String, io::Error>;
+pub trait PointCloud2Deserializer: BufferReader {
     fn read_point_field(&mut self) -> Result<PointField, io::Error>;
+    fn read_point_fields(&mut self) -> Result<Vec<PointField>, io::Error>;
     fn read_data(&mut self) -> Result<Vec<u8>, io::Error>;
 }
 

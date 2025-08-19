@@ -333,6 +333,12 @@ pub struct Vector3 {
     z: f64,
 }
 
+impl Vector3 {
+    pub fn new(x: f64, y: f64, z: f64) -> Self {
+        Self { x, y, z }
+    }
+}
+
 /// Analog to geometry_msgs/msg/PoseWithCovariance in ROS
 #[derive(Debug, Clone, PartialEq)]
 pub struct PoseWithCovariance {
