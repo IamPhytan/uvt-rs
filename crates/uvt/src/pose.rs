@@ -3,8 +3,6 @@ use std::{
     time::Duration,
 };
 
-use crate::deserialization::MessageDataBuffer;
-
 use quaternion;
 
 #[cfg(feature = "glam-support")]
@@ -243,68 +241,6 @@ impl PoseStamped {
             pose: Pose {
                 position,
                 orientation,
-            },
-        }
-    }
-    pub fn from_msg_data(msg_data: Vec<u8>) -> Self {
-        let mut msg_buf = MessageDataBuffer::new(msg_data);
-
-        // Message header
-        let header = Header {
-            seq: msg_buf.read_u32_le().unwrap().clone(),
-            stamp: Time {
-                sec: msg_buf.read_i32_le().unwrap().clone(),
-                nanosec: msg_buf.read_u32_le().unwrap().clone(),
-            },
-            frame_id: msg_buf.read_lp_string().unwrap(),
-        };
-
-        let child_frame = msg_buf.read_lp_string().unwrap();
-
-        // Message pose
-        let position = Point {
-            x: msg_buf.read_f64_le().unwrap(),
-            y: msg_buf.read_f64_le().unwrap(),
-            z: msg_buf.read_f64_le().unwrap(),
-        };
-
-        let orientation = Quaternion {
-            x: msg_buf.read_f64_le().unwrap(),
-            y: msg_buf.read_f64_le().unwrap(),
-            z: msg_buf.read_f64_le().unwrap(),
-            w: msg_buf.read_f64_le().unwrap(),
-        };
-
-        // TODO: Implement PoseWithCovarianceStamped
-        // https://docs.ros.org/en/noetic/api/geometry_msgs/html/msg/PoseWithCovarianceStamped.html
-        // 6 x 6 covariance matrix = 36 covariance values
-        let pose_covariance: Vec<f64> = (0..36)
-            .into_iter()
-            .map(|_| msg_buf.read_f64_le().unwrap())
-            .collect();
-
-        let twist_linear = Vector3 {
-            x: msg_buf.read_f64_le().unwrap(),
-            y: msg_buf.read_f64_le().unwrap(),
-            z: msg_buf.read_f64_le().unwrap(),
-        };
-        let twist_angular = Vector3 {
-            x: msg_buf.read_f64_le().unwrap(),
-            y: msg_buf.read_f64_le().unwrap(),
-            z: msg_buf.read_f64_le().unwrap(),
-        };
-
-        // 6 x 6 covariance matrix = 36 covariance values
-        let twist_covariance: Vec<f64> = (0..36)
-            .into_iter()
-            .map(|_| msg_buf.read_f64_le().unwrap())
-            .collect();
-
-        Self {
-            header: header,
-            pose: Pose {
-                position: position,
-                orientation: orientation,
             },
         }
     }

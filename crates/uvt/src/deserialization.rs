@@ -188,7 +188,7 @@ impl MessageDataBuffer {
     }
 
     pub fn read_null_terminated_string(&mut self) -> Result<String, io::Error> {
-        let strlen = self.read_u32_le()? as usize;
+        let _strlen = self.read_u32_le()? as usize;
         let mut bytes = Vec::new();
         while let b = self.read_byte()? {
             if b == 0 {

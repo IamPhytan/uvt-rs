@@ -1,6 +1,6 @@
 use crate::deserialization::BufferReader;
 use crate::pose;
-use std::io::{self, Error};
+use std::io;
 
 pub trait TrajectoryDeserializer: BufferReader {
     fn read_position(&mut self) -> Result<pose::Point, io::Error>;
@@ -15,7 +15,7 @@ pub fn parse_trajectory<D: TrajectoryDeserializer>(
     // Message header
     let header = d.read_header()?;
 
-    let child_frame = d.read_lp_string_aligned(8)?;
+    let _child_frame = d.read_lp_string_aligned(8)?;
 
     // Message pose
     let position = d.read_position()?;
@@ -26,15 +26,15 @@ pub fn parse_trajectory<D: TrajectoryDeserializer>(
 
     // Pose covariance
     // 6 x 6 covariance matrix = 36 covariance values
-    let pose_covariance = d.read_covariance()?;
+    let _pose_covariance = d.read_covariance()?;
 
     // Twist values
-    let twist_linear = d.read_vector()?;
-    let twist_angular = d.read_vector()?;
+    let _twist_linear = d.read_vector()?;
+    let _twist_angular = d.read_vector()?;
 
     // Twist covariance
     // 6 x 6 covariance matrix = 36 covariance values
-    let twist_covariance = d.read_covariance()?;
+    let _twist_covariance = d.read_covariance()?;
 
     Ok(pose::PoseStamped {
         header: header,
