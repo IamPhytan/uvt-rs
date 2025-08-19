@@ -169,7 +169,12 @@ impl Uvt {
             .iter()
             .tqdm()
             .desc(Some("Reading trajectory msgs"))
-            .map(|msg| pose::PoseStamped::from_msg_data(msg.to_vec()))
+            .map(|msg| {
+                trajectory::parse_trajectory::<bag::BagDeserializer>(bag::BagDeserializer::new(
+                    msg.to_vec(),
+                ))
+                .unwrap()
+            })
             .collect();
 
         let pointclouds: Vec<Vec<pose::Point>> =

@@ -104,6 +104,10 @@ impl TrajectoryDeserializer for BagDeserializer {
             w: self.buf.read_f64_le()?,
         })
     }
+
+    /// Read covariance values
+    /// 6 x 6 covariance matrix = 36 covariance values
+    /// https://docs.ros.org/en/noetic/api/geometry_msgs/html/msg/PoseWithCovarianceStamped.html
     fn read_covariance(&mut self) -> Result<Vec<f64>, std::io::Error> {
         (0..36)
             .into_iter()

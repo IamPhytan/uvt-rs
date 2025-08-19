@@ -14,5 +14,33 @@ pub fn parse_trajectory<D: TrajectoryDeserializer>(
 ) -> Result<pose::PoseStamped, std::io::Error> {
     // Message header
     let header = d.read_header()?;
-    Err(Error::new(io::ErrorKind::InvalidData, "Not implemented"))
+
+    let child_frame = d.read_lp_string()?;
+
+    // Message pose
+    let position = d.read_position()?;
+    let orientation = d.read_orientation()?;
+
+    // TODO: Implement PoseWithCovarianceStamped
+    // https://docs.ros.org/en/noetic/api/geometry_msgs/html/msg/PoseWithCovarianceStamped.html
+
+    // Pose covariance
+    // 6 x 6 covariance matrix = 36 covariance values
+    let pose_covariance = d.read_covariance()?;
+
+    // Twist values
+    let twist_linear = d.read_vector()?;
+    let twist_angular = d.read_vector()?;
+
+    // Twist covariance
+    // 6 x 6 covariance matrix = 36 covariance values
+    let twist_covariance = d.read_covariance()?;
+
+    Ok(pose::PoseStamped {
+        header: header,
+        pose: pose::Pose {
+            position: position,
+            orientation: orientation,
+        },
+    })
 }
