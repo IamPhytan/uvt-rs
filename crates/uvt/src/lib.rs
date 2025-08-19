@@ -273,21 +273,41 @@ impl Uvt {
             })
             .collect();
 
-        for (i, msg_data) in traj_msgs.iter().enumerate() {
-            if i < 2 {
-                let mut msg_buf = deserialization::MessageDataBuffer::new(msg_data.clone());
+        // Retriece pointcloud points
+        let pointclouds: Vec<Vec<pose::Point>> =
+            maps.par_iter().map(|m| m.to_owned().into()).collect();
 
-                let _ = msg_buf.dump_to_file(format!("data/traj-{}.hex", fname).as_str());
-            }
-        }
+        println!("Got pointclouds");
 
-        // let trajectory: Vec<pose::PoseStamped> = traj_msgs
-        //     .iter()
-        //     .tqdm()
-        //     .desc(Some("Reading trajectory msgs"))
-        //     .map(|msg| pose::PoseStamped::from_msg_data(msg.to_vec()))
-        //     .collect();
+        let last_pcloud = pointclouds[pointclouds.len() - 1].clone();
 
-        todo!("Unpack MCAP file");
+        let pts: Vec<f32> = last_pcloud
+            .par_iter()
+            .map(|&pt| Into::<[f32; 3]>::into(pt))
+            .flatten()
+            .collect::<Vec<f32>>()
+            .try_into()
+            .unwrap();
+        let data = vtkio::model::DataSet::inline(vtkio::model::PolyDataPiece {
+            points: vtkio::IOBuffer::F32(pts),
+            verts: None,
+            lines: None,
+            polys: None,
+            strips: None,
+            data: vtkio::model::Attributes::new(),
+        });
+
+        let map_vtk = Vtk {
+            version: vtkio::model::Version { major: 3, minor: 0 },
+            byte_order: vtkio::model::ByteOrder::BigEndian,
+            title: String::from(format!("UVT file generated from {}", fname)),
+            file_path: None,
+            data: data,
+        };
+
+        Ok(Self {
+            map: map_vtk,
+            trajectory: trajectory,
+        })
     }
 }
