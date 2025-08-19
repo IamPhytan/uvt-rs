@@ -261,6 +261,17 @@ impl Uvt {
                 .unwrap()
             })
             .collect();
+        let trajectory: Vec<pose::PoseStamped> = traj_msgs
+            .iter()
+            .tqdm()
+            .desc(Some("Reading trajectory msgs"))
+            .map(|msg| {
+                trajectory::parse_trajectory::<mcap::McapDeserializer>(mcap::McapDeserializer::new(
+                    msg.to_vec(),
+                ))
+                .unwrap()
+            })
+            .collect();
 
         for (i, msg_data) in traj_msgs.iter().enumerate() {
             if i < 2 {

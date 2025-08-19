@@ -2,6 +2,7 @@ use std::io::{Error, ErrorKind};
 
 use crate::deserialization::{BufferReader, MessageDataBuffer};
 use crate::pointcloud::{PointCloud2Deserializer, PointField};
+use crate::trajectory::TrajectoryDeserializer;
 use crate::{pointcloud, pose};
 
 pub struct McapDeserializer {
@@ -97,5 +98,46 @@ impl PointCloud2Deserializer for McapDeserializer {
             })?
             .to_vec();
         Ok(data)
+    }
+}
+
+impl TrajectoryDeserializer for McapDeserializer {
+    /// Read position point
+    fn read_position(&mut self) -> Result<pose::Point, std::io::Error> {
+        Ok(pose::Point {
+            x: self.buf.read_f64_le()?,
+            y: self.buf.read_f64_le()?,
+            z: self.buf.read_f64_le()?,
+        })
+    }
+
+    /// Read pose orientation as a quaternion
+    fn read_orientation(&mut self) -> Result<pose::Quaternion, std::io::Error> {
+        Ok(pose::Quaternion {
+            x: self.buf.read_f64_le()?,
+            y: self.buf.read_f64_le()?,
+            z: self.buf.read_f64_le()?,
+            w: self.buf.read_f64_le()?,
+        })
+    }
+
+    /// Read covariance values
+    /// 6 x 6 covariance matrix = 36 covariance values
+    /// https://docs.ros.org/en/noetic/api/geometry_msgs/html/msg/PoseWithCovarianceStamped.html
+    fn read_covariance(&mut self) -> Result<Vec<f64>, std::io::Error> {
+        (0..36)
+            .into_iter()
+            .map(|_| self.buf.read_f64_le())
+            .into_iter()
+            .collect()
+    }
+
+    /// Read a twist vector
+    fn read_vector(&mut self) -> Result<pose::Vector3, std::io::Error> {
+        Ok(pose::Vector3::new(
+            self.buf.read_f64_le()?,
+            self.buf.read_f64_le()?,
+            self.buf.read_f64_le()?,
+        ))
     }
 }
