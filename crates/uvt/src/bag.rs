@@ -30,6 +30,10 @@ impl BufferReader for BagDeserializer {
         self.buf.read_byte()
     }
 
+    fn slice(&mut self, length: usize) -> Option<&[u8]> {
+        self.buf.slice(length)
+    }
+
     fn read_lp_string(&mut self) -> Result<String, std::io::Error> {
         self.buf.read_lp_string()
     }

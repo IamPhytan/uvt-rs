@@ -59,7 +59,7 @@ pub fn parse_pointcloud<D: PointCloud2Deserializer>(
     let fields = d.read_point_fields()?;
 
     // Is this data bigendian?
-    let is_bigendian = d.read_byte()? == 1;
+    let is_bigendian = d.read_byte_aligned(4)? == 1;
     // Length of a point in bytes
     let point_step = d.read_u32_le()?;
     // Length of a row in bytes
@@ -69,7 +69,7 @@ pub fn parse_pointcloud<D: PointCloud2Deserializer>(
     let data = d.read_data()?;
 
     // Is dense
-    let is_dense = d.read_byte()? == 1;
+    let is_dense = d.read_byte_aligned(4)? == 1;
 
     Ok(PointCloud2 {
         header,

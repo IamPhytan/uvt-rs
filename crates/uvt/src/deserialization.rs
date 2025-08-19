@@ -27,6 +27,11 @@ impl MessageDataBuffer {
         self.len() - self.position
     }
 
+    /// Get current position of cursor
+    pub fn offset(&self) -> usize {
+        self.position
+    }
+
     /// Dump data to file
     pub fn dump_to_file(&self, path: &str) -> io::Result<()> {
         let path = Path::new(&path);
@@ -206,7 +211,14 @@ pub trait BufferReader {
     fn read_u32_le(&mut self) -> Result<u32, std::io::Error>;
     fn read_f64_le(&mut self) -> Result<f64, std::io::Error>;
     fn read_byte(&mut self) -> Result<u8, std::io::Error>;
+    fn read_byte_aligned(&mut self, next_alignment: usize) -> Result<u8, std::io::Error> {
+        self.read_byte()
+    }
+    fn slice(&mut self, length: usize) -> Option<&[u8]>;
     fn read_lp_string(&mut self) -> Result<String, std::io::Error>;
+    fn read_lp_string_aligned(&mut self, next_alignment: usize) -> Result<String, std::io::Error> {
+        self.read_lp_string()
+    }
     fn read_null_terminated_string(&mut self) -> Result<String, std::io::Error>;
     fn read_header(&mut self) -> Result<pose::Header, std::io::Error>;
 }

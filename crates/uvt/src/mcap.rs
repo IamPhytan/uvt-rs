@@ -27,19 +27,45 @@ impl BufferReader for McapDeserializer {
     }
 
     fn read_byte(&mut self) -> Result<u8, std::io::Error> {
-        let b = self.buf.read_byte();
-        let _ = self.buf.slice(3);
-        b
+        self.buf.read_byte()
+    }
+
+    fn read_byte_aligned(&mut self, next_alignment: usize) -> Result<u8, std::io::Error> {
+        let b = self.read_byte()?;
+
+        // Align to next field
+        // Respect 4-byte or 8-byte data alignment of CDR
+        let padding = (next_alignment - (1 % next_alignment)) % next_alignment;
+        if padding > 0 {
+            let _ = self.buf.slice(padding);
+        }
+
+        Ok(b)
+    }
+
+    fn slice(&mut self, length: usize) -> Option<&[u8]> {
+        self.buf.slice(length)
     }
 
     fn read_lp_string(&mut self) -> Result<String, std::io::Error> {
         let s = self.buf.read_lp_string()?;
-        // Remove null termination byte
+        Ok(s)
+    }
+
+    fn read_lp_string_aligned(&mut self, next_alignment: usize) -> Result<String, std::io::Error> {
+        let s = self.buf.read_lp_string()?;
+
         let strdata = s.trim_end_matches("\0").to_string();
-        // Respect 4-byte data alignment of CDR
+
+        // Align to next field
+        // Respect 4-byte or 8-byte data alignment of CDR
         let strlen = s.len();
-        let padding = 4 - (strlen % 4);
-        let _ = self.buf.slice(padding);
+        let padding = (next_alignment - (strlen % next_alignment)) % next_alignment;
+
+        if padding > 0 {
+            let _ = self.buf.slice(padding);
+        }
+
         Ok(strdata)
     }
 
@@ -51,14 +77,16 @@ impl BufferReader for McapDeserializer {
         // TODO: Remove unwraps
 
         // Ignore first 4 bytes
+        // Used in CDR for endianness
         let _ = self.buf.read_u32_le();
+
         Ok(pose::Header {
             seq: 0,
             stamp: pose::Time {
                 sec: self.buf.read_i32_le()?,
                 nanosec: self.read_u32_le()?,
             },
-            frame_id: self.read_lp_string()?,
+            frame_id: self.read_lp_string_aligned(4)?,
         })
     }
 }
@@ -66,9 +94,9 @@ impl BufferReader for McapDeserializer {
 impl PointCloud2Deserializer for McapDeserializer {
     fn read_point_field(&mut self) -> Result<pointcloud::PointField, std::io::Error> {
         Ok(PointField {
-            name: self.read_lp_string()?,
+            name: self.read_lp_string_aligned(4)?,
             offset: self.read_u32_le()?,
-            datatype: self.read_byte()?.into(),
+            datatype: self.read_byte_aligned(4)?.into(),
             count: self.read_u32_le()?,
         })
     }

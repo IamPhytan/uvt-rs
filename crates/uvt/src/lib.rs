@@ -154,6 +154,7 @@ impl Uvt {
         let map_msgs = Self::retrieve_topic_messages(&bag, map_topic);
         let traj_msgs = Self::retrieve_topic_messages(&bag, traj_topic);
 
+        // Collect maps and trajectory
         let maps: Vec<pointcloud::PointCloud2> = map_msgs
             .iter()
             .tqdm()
@@ -177,13 +178,13 @@ impl Uvt {
             })
             .collect();
 
+        // Retrieve points from pointclouds
         let pointclouds: Vec<Vec<pose::Point>> =
             maps.par_iter().map(|m| m.to_owned().into()).collect();
+        println!("Retrieved points from pointclouds");
 
-        println!("Got pointclouds");
-
+        // Use last pointcloud as the map
         let last_pcloud = pointclouds[pointclouds.len() - 1].clone();
-
         let pts: Vec<f32> = last_pcloud
             .par_iter()
             .map(|&pt| Into::<[f32; 3]>::into(pt))
@@ -273,14 +274,13 @@ impl Uvt {
             })
             .collect();
 
-        // Retriece pointcloud points
+        // Retrieve points from pointclouds
         let pointclouds: Vec<Vec<pose::Point>> =
             maps.par_iter().map(|m| m.to_owned().into()).collect();
+        println!("Retrieved points from pointclouds");
 
-        println!("Got pointclouds");
-
+        // Use last pointcloud as the map
         let last_pcloud = pointclouds[pointclouds.len() - 1].clone();
-
         let pts: Vec<f32> = last_pcloud
             .par_iter()
             .map(|&pt| Into::<[f32; 3]>::into(pt))

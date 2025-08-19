@@ -15,7 +15,7 @@ pub fn parse_trajectory<D: TrajectoryDeserializer>(
     // Message header
     let header = d.read_header()?;
 
-    let child_frame = d.read_lp_string()?;
+    let child_frame = d.read_lp_string_aligned(8)?;
 
     // Message pose
     let position = d.read_position()?;
