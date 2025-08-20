@@ -3,7 +3,9 @@ use std::{
     time::Duration,
 };
 
-use quaternion;
+use quaternion_core as quat;
+use quaternion_core::RotationSequence::XYZ;
+use quaternion_core::RotationType::Extrinsic;
 
 #[cfg(feature = "glam-support")]
 use glam;
@@ -88,8 +90,8 @@ pub struct Quaternion {
     pub w: f64,
 }
 
-impl From<quaternion::Quaternion<f64>> for Quaternion {
-    fn from(q: quaternion::Quaternion<f64>) -> Self {
+impl From<quat::Quaternion<f64>> for Quaternion {
+    fn from(q: quat::Quaternion<f64>) -> Self {
         Self {
             w: q.0,
             x: q.1[0],
@@ -99,8 +101,8 @@ impl From<quaternion::Quaternion<f64>> for Quaternion {
     }
 }
 
-impl Into<quaternion::Quaternion<f64>> for Quaternion {
-    fn into(self) -> quaternion::Quaternion<f64> {
+impl Into<quat::Quaternion<f64>> for Quaternion {
+    fn into(self) -> quat::Quaternion<f64> {
         (self.w, [self.x, self.y, self.z])
     }
 }
@@ -216,11 +218,23 @@ impl Pose {
             y: dofs.1,
             z: dofs.2,
         };
-        let q = quaternion::euler_angles(dofs.3, dofs.4, dofs.5);
+        let angles = [dofs.3, dofs.4, dofs.5];
+        let q = quat::from_euler_angles(Extrinsic, XYZ, angles);
         Self {
             position: pt,
             orientation: q.into(),
         }
+    }
+
+    /// Generate a tuple of 6 DOFs:
+    /// (x, y, z, roll, pitch, yaw).
+    /// Angles are in radians
+    pub fn to_6dof(self) -> (f64, f64, f64, f64, f64, f64) {
+        let pt = self.position;
+        let q = self.orientation;
+        let [roll, pitch, yaw] = quat::to_euler_angles::<f64>(Extrinsic, XYZ, q.into());
+
+        (pt.x, pt.y, pt.z, roll, pitch, yaw)
     }
 }
 
@@ -449,19 +463,19 @@ mod tests {
     fn test_quaternion_conversion() {
         let [q1, q2, q3, q4] = quaternion_data();
 
-        let q1_vec: quaternion::Quaternion<f64> = q1.into();
+        let q1_vec: quat::Quaternion<f64> = q1.into();
         let q1_convert = Quaternion::from(q1_vec);
         assert_eq!(q1, q1_convert);
 
-        let q2_vec: quaternion::Quaternion<f64> = q2.into();
+        let q2_vec: quat::Quaternion<f64> = q2.into();
         let q2_convert = Quaternion::from(q2_vec);
         assert_eq!(q2, q2_convert);
 
-        let q3_vec: quaternion::Quaternion<f64> = q3.into();
+        let q3_vec: quat::Quaternion<f64> = q3.into();
         let q3_convert = Quaternion::from(q3_vec);
         assert_eq!(q3, q3_convert);
 
-        let q4_vec: quaternion::Quaternion<f64> = q4.into();
+        let q4_vec: quat::Quaternion<f64> = q4.into();
         let q4_convert = Quaternion::from(q4_vec);
         assert_eq!(q4, q4_convert);
     }

@@ -7,7 +7,7 @@ authors = { workspace = true }
 repository = { workspace = true }
 
 [dependencies]
-quaternion = "2.0.0"
+quaternion-core = "0.5"
 rosbag = "0.6.3"
 vtkio = { workspace = true }
 glam = { version = "0.28", optional = true }
