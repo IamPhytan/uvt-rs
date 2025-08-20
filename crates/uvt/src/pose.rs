@@ -341,6 +341,12 @@ impl From<Vec<PoseStamped>> for Path {
     }
 }
 
+/// Round a f64 to i
+pub fn round(num: f64, n: u32) -> f64 {
+    let factor: f64 = 10_f64.powf(n.into());
+    (num * factor).round() / factor
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

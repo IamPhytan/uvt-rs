@@ -1,4 +1,5 @@
 use rayon::prelude::*;
+use std::fs::File;
 use std::io::{Error, ErrorKind};
 use std::path;
 use std::{fs, time::Duration};
@@ -315,28 +316,45 @@ impl Uvt {
         let export_path = path::absolute(path)?.clone();
         println!("Writing file to {}", export_path.display());
 
-        let mut map_output = String::new();
-        Vtk::write_legacy_ascii(self.map.clone(), &mut map_output)
+        //
+        // Map
+        //
+        let mut map_str = String::new();
+        Vtk::write_legacy_ascii(self.map.clone(), &mut map_str)
             .expect(&format!("Failed to write file"));
 
-        let map_str: Vec<String> = map_output.split("\n").map(|s| s.to_string()).collect();
-
-        println!("{:?}", map_str.len());
-
+        //
+        // Trajectory
+        //
         let uvt_trajectory = self.trajectory.clone();
 
         // Retrieve frame ID
         let frame_id = uvt_trajectory
-            .into_iter()
-            .next()
+            .first()
             .ok_or(Error::new(ErrorKind::InvalidData, "Missing poses"))?
             .header
-            .frame_id;
+            .frame_id
+            .clone();
         let frame_str = format!("frame_id : {}", frame_id);
 
-        println!("{:?}", frame_str);
+        let traj_poses: Vec<String> = uvt_trajectory
+            .into_iter()
+            .map(|pose| {
+                let dofs = pose.pose.to_6dof();
+                let x = pose::round(dofs.0, 6);
+                let y = pose::round(dofs.1, 6);
+                let z = pose::round(dofs.2, 6);
+                let roll = pose::round(dofs.3, 6);
+                let pitch = pose::round(dofs.4, 6);
+                let yaw = pose::round(dofs.5, 6);
 
-        fs::write(export_path, map_output)?;
+                format!("{x},{y},{z},{roll},{pitch},{yaw}")
+            })
+            .collect();
+        let traj_str = traj_poses.join("\n");
+        let uvt_str = vec![map_str, TRAJ_DELIM.to_string(), frame_str, traj_str].join("\n");
+
+        fs::write(export_path, uvt_str)?;
 
         Ok(())
         // todo!("Implement writing");
