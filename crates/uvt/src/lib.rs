@@ -1,5 +1,4 @@
 use rayon::prelude::*;
-use std::fs::File;
 use std::io::{Error, ErrorKind};
 use std::path;
 use std::{fs, time::Duration};
@@ -14,7 +13,7 @@ mod bag;
 mod deserialization;
 mod mcap;
 mod pointcloud;
-mod pose;
+pub mod pose;
 mod trajectory;
 pub use pose::Point;
 
