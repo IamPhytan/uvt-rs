@@ -6,6 +6,9 @@ members = ["crates/uvt", "crates/uvt-plot", "crates/uvt-viz3d"]
 edition = "2024"
 authors = ["Damien LaRocque <phicoltan@gmail.com"]
 repository = "https://github.com/IamPhytan/uvt-rs"
+license = "MIT"
+keywords = ["robotics", "autonomous", "vehicle", "file-format"]
+categories = ["science::robotics"]
 
 [workspace.dependencies]
 uvt = { version = "0.1.0", path = "crates/uvt" }
