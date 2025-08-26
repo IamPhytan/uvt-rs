@@ -1,3 +1,4 @@
+//! This module provides functionality to parse point cloud data from ROS messages.
 use std::collections::HashMap;
 
 use crate::deserialization::{BufferReader, MessageDataBuffer};
@@ -45,6 +46,15 @@ pub struct PointCloud2 {
     pub is_dense: bool,
 }
 
+/// Parses raw point cloud data using the provided deserializer.
+///
+/// # Arguments
+///
+/// * `deserializer` - An instance implementing the deserialization trait.
+///
+/// # Returns
+///
+/// A PointCloud2 structure parsed from the raw data.
 pub fn parse_pointcloud<D: PointCloud2Deserializer>(
     mut d: D,
 ) -> Result<PointCloud2, std::io::Error> {

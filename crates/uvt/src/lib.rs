@@ -1,3 +1,25 @@
+//! # uvt
+//!
+//! The `uvt` crate provides utilities for working with _Uncrewed Vehicle Trajectory_ (UVT) files.
+//!
+//! UVT files combine:
+//! - A Lidar map of the environment (stored in VTK format).
+//! - A trajectory (poses over time), extracted from ROS bag (`.bag`) or MCAP (`.mcap`) recordings.
+//!
+//! ## Features
+//! - Read/write `.uvt` files
+//! - Extract map and trajectory data from `.bag` and `.mcap` logs
+//!
+//! ## Example
+//! ```no_run
+//! use uvt::Uvt;
+//!
+//! // Generate a UVt from a bag file
+//! let uvt = Uvt::read_rosbag("dataset.bag", "/map", "/trajectory").unwrap();
+//!
+//! // Write it back to UVT format
+//! uvt.write_file("output.uvt").unwrap();
+//! ```
 use rayon::prelude::*;
 use std::io::{Error, ErrorKind};
 use std::path;
@@ -21,12 +43,39 @@ use memmap2::Mmap;
 
 const TRAJ_DELIM: &str = "#############################";
 
+/// A UVT (_Uncrewed Vehicle Trajectory_)
+///
+/// Contains:
+/// - A map of the environment (`vtkio::Vtk`)
+/// - A trajectory (sequence of stamped poses)
 pub struct Uvt {
+    /// The environment map
     pub map: vtkio::Vtk,
+    /// The vehicle's trajectory, saved as a sequence of stamped poses.
     pub trajectory: Vec<pose::PoseStamped>,
 }
 
 impl Uvt {
+    /// Read a UVT file from disk.
+    /// A UVT file contains both a VTK map and a trajectory.
+    ///
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - A path to the UVT file.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use uvt::Uvt;
+    ///
+    /// let my_uvt = Uvt::read_file("my_uvt.uvt").unwrap();
+    /// ```
+    ///
+    /// # Errors
+    /// Returns an error if:
+    /// - The file cannot be read
+    /// - The VTK or trajectory data is malformed
+    /// = The UVT file does not follow the UVT format
     pub fn read_file<P: AsRef<path::Path>>(path: P) -> Result<Self, Error> {
         let fpath = path.as_ref();
         let content = fs::read_to_string(fpath)?;
@@ -36,7 +85,10 @@ impl Uvt {
             path::absolute(fpath).unwrap().display()
         );
 
-        let delimiter = content.find(TRAJ_DELIM).unwrap();
+        let delimiter = content.find(TRAJ_DELIM).ok_or(Error::new(
+            ErrorKind::InvalidData,
+            "Could not find Trajectory delimiter in UVT file",
+        ))?;
         let vtk_str = content[..delimiter].trim();
         let traj_str = content[delimiter + TRAJ_DELIM.len()..].trim();
 
@@ -97,6 +149,18 @@ impl Uvt {
         })
     }
 
+    /// Retrieves messages for a given topic from a ROS bag.
+    ///
+    /// This internal method extracts messages that match a specified topic.
+    ///
+    /// # Arguments
+    ///
+    /// * `bag` - A reference to a `RosBag` instance.
+    /// * `topic` - The name of the topic for which to retrieve messages.
+    ///
+    /// # Returns
+    ///
+    /// A vector of message data as byte vectors.
     fn retrieve_topic_messages<'a>(bag: &'a RosBag, topic: &str) -> Vec<Vec<u8>> {
         let connections: Vec<_> = bag
             .index_records()
@@ -138,6 +202,24 @@ impl Uvt {
         topic_msgs
     }
 
+    /// Reads a ROS bag file and extracts UVT data.
+    ///
+    /// The method reads messages for the map and trajectory topics, parses pointcloud data,
+    /// and constructs a VTK map using the last pointcloud.
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - A path to the ROS bag file.
+    /// * `map_topic` - The topic name for map messages.
+    /// * `traj_topic` - The topic name for trajectory messages.
+    ///
+    /// # Returns
+    ///
+    /// A `Uvt` instance containing the map and trajectory.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the ROS bag file cannot be read or parsed.
     pub fn read_rosbag<P: AsRef<path::Path>>(
         path: P,
         map_topic: &str,
@@ -215,6 +297,19 @@ impl Uvt {
         })
     }
 
+    /// Retrieves messages for a given topic from an MCAP file.
+    ///
+    /// This internal method reads an MCAP memory-mapped file and extracts the messages
+    /// matching the specified topic.
+    ///
+    /// # Arguments
+    ///
+    /// * `mcap_map` - A memory-mapped representation of an MCAP file.
+    /// * `topic` - The name of the topic for which to retrieve messages.
+    ///
+    /// # Returns
+    ///
+    /// A vector of message data as byte vectors.
     fn retrieve_mcap_topic_messages<'a>(mcap_map: &Mmap, topic: &str) -> Vec<Vec<u8>> {
         let messages = mcap_crate::MessageStream::new(&mcap_map).unwrap();
         let topic_msgs = messages
@@ -232,7 +327,24 @@ impl Uvt {
         topic_msgs
     }
 
-    // TODO: Read MCAP
+    /// Reads an MCAP file and extracts UVT data.
+    ///
+    /// The method reads messages for the map and trajectory topics, parses pointcloud data,
+    /// and constructs a VTK map using the last pointcloud.
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - A path to the MCAP file.
+    /// * `map_topic` - The topic name for map messages.
+    /// * `traj_topic` - The topic name for trajectory messages.
+    ///
+    /// # Returns
+    ///
+    /// A `Uvt` instance containing the map and trajectory.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the MCAP file cannot be read or parsed.
     pub fn read_mcap<P: AsRef<path::Path>>(
         path: P,
         map_topic: &str,
@@ -311,6 +423,18 @@ impl Uvt {
         })
     }
 
+    /// Writes the UVT data (map and trajectory) to a file.
+    ///
+    /// The output file contains a VTK map encoded in legacy ASCII format,
+    /// followed by a delimiter and the trajectory data.
+    ///
+    /// # Arguments
+    ///
+    /// * `path` - The destination file path.
+    ///
+    /// # Returns
+    ///
+    /// `Ok(())` if the file was written successfully, or an `Error` otherwise.
     pub fn write_file<P: AsRef<path::Path>>(&self, path: P) -> Result<(), std::io::Error> {
         let export_path = path::absolute(path)?.clone();
         println!("Writing file to {}", export_path.display());
@@ -356,6 +480,5 @@ impl Uvt {
         fs::write(export_path, uvt_str)?;
 
         Ok(())
-        // todo!("Implement writing");
     }
 }

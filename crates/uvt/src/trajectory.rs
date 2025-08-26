@@ -1,3 +1,4 @@
+//! This module provides functionality to parse trajectory data from ROS messages.
 use crate::deserialization::BufferReader;
 use crate::pose;
 use std::io;
@@ -9,6 +10,15 @@ pub trait TrajectoryDeserializer: BufferReader {
     fn read_vector(&mut self) -> Result<pose::Vector3, io::Error>;
 }
 
+/// Parses a trajectory message from raw data into a sequence of PoseStamped instances.
+///
+/// # Arguments
+///
+/// * `deserializer` - An instance that converts the raw message into structured data.
+///
+/// # Returns
+///
+/// A vector of PoseStamped elements representing the trajectory.
 pub fn parse_trajectory<D: TrajectoryDeserializer>(
     mut d: D,
 ) -> Result<pose::PoseStamped, std::io::Error> {

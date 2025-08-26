@@ -1,3 +1,5 @@
+//! This module defines types that model ROS messages for Time, Pose, Quaternion, etc.
+
 use std::{
     ops::{Add, Mul, Sub},
     time::Duration,
@@ -19,6 +21,7 @@ pub struct Time {
     pub nanosec: u32,
 }
 
+// Convert a standard Duration into a ROS-like Time message.
 impl From<Duration> for Time {
     fn from(duration: Duration) -> Self {
         Time {
@@ -28,17 +31,21 @@ impl From<Duration> for Time {
     }
 }
 
+// Convert a ROS-like Time message back into a standard Duration.
 impl From<Time> for Duration {
     fn from(time: Time) -> Self {
         Duration::new(time.sec as u64, time.nanosec)
     }
 }
 
-/// Analog to std_msgs/msg/Header in ROS
+/// A header struct analog to std_msgs/msg/Header in ROS
 #[derive(Debug, Clone, PartialEq)]
 pub struct Header {
+    /// The sequence number is a uint32 that is incremented with each message in ROS stamped messages.
     pub seq: u32,
+    /// The stamp is a Time struct representing the time at which the data was recorded.
     pub stamp: Time,
+    /// The frame_id is a string that identifies the coordinate frame.
     pub frame_id: String,
 }
 
@@ -53,9 +60,11 @@ pub struct Point {
 }
 
 impl Point {
+    /// Creates a new point using the given x, y, and z coordinates.
     pub fn new(x: f64, y: f64, z: f64) -> Self {
         Self { x, y, z }
     }
+    /// Constructs a point from a tuple of (x, y, z).
     pub fn from_tuple(tup: (f64, f64, f64)) -> Self {
         Self {
             x: tup.0,
@@ -63,6 +72,7 @@ impl Point {
             z: tup.2,
         }
     }
+    /// Returns the coordinates as a tuple (x, y, z).
     pub fn coords(self) -> (f64, f64, f64) {
         (self.x, self.y, self.z)
     }
@@ -74,6 +84,8 @@ impl Into<[f32; 3]> for Point {
     }
 }
 
+/// Conversion from Point to glam::Vec3 if the "glam-support" feature is enabled.
+/// Used to show point clouds in rerun.
 #[cfg(feature = "glam-support")]
 impl Into<glam::Vec3> for Point {
     fn into(self) -> glam::Vec3 {
@@ -81,7 +93,8 @@ impl Into<glam::Vec3> for Point {
     }
 }
 
-/// Analog to geometry_msgs/msg/Quaternion in ROS
+/// A quaternion struct analog to geometry_msgs/msg/Quaternion in ROS.
+/// q = w + xi + yj + zk
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Quaternion {
     pub x: f64,
@@ -108,10 +121,12 @@ impl Into<quat::Quaternion<f64>> for Quaternion {
 }
 
 impl Quaternion {
+    /// Constructs a new quaternion given x, y, z, and w components.
     pub fn new(x: f64, y: f64, z: f64, w: f64) -> Self {
         Self { x, y, z, w }
     }
 
+    /// Constructs a quaternion from a tuple (x, y, z, w).
     pub fn from_tuple(tup: (f64, f64, f64, f64)) -> Self {
         Self {
             x: tup.0,
@@ -121,14 +136,18 @@ impl Quaternion {
         }
     }
 
+    /// Computes the square of the quaternion's length.
     pub fn square_len(&self) -> f64 {
         self.w * self.w + self.x * self.x + self.y * self.y + self.z * self.z
     }
 
+    /// Computes the norm (magnitude) of the quaternion.
     pub fn norm(&self) -> f64 {
         self.square_len().sqrt()
     }
 
+    /// Returns the conjugate of the quaternion.
+    /// q' = w - xi - yj - zk
     pub fn conjugate(&self) -> Self {
         Self {
             w: self.w,
@@ -138,6 +157,8 @@ impl Quaternion {
         }
     }
 
+    /// Returns a normalized (unit length) version of the quaternion.
+    /// Panics if the quaternion has zero length.
     pub fn normalized(&self) -> Self {
         let norm = self.norm();
         if norm == 0.0 {
@@ -150,6 +171,8 @@ impl Quaternion {
 impl Add for Quaternion {
     type Output = Self;
 
+    /// Adds two quaternions component-wise.
+    /// q1 + q2 = (w1+w2) + (x1+x2)i + (y1+y2)j + (z1+z2)k
     fn add(self, rhs: Self) -> Self {
         Self {
             x: self.x + rhs.x,
@@ -162,6 +185,9 @@ impl Add for Quaternion {
 
 impl Sub for Quaternion {
     type Output = Self;
+
+    /// Subtracts two quaternions component-wise.
+    /// q1 - q2 = (w1-w2) + (x1-x2)i + (y1-y2)j + (z1-z2)k
     fn sub(self, rhs: Self) -> Self {
         Self {
             x: self.x - rhs.x,
@@ -174,6 +200,10 @@ impl Sub for Quaternion {
 
 impl Mul for Quaternion {
     type Output = Self;
+
+    /// Multiplies two quaternions using the Hamilton product.
+    /// q1 * q2 = (w1w2 - x1x2 - y1y2 - z1z2) + (w1x2 + x1w2 + y1z2 - z1y2)i
+    ///         + (w1y2 - x1z2 + y1w2 + z1x2)j + (w1z2 + x1y2 - y1x2 + z1w2)k
     fn mul(self, rhs: Self) -> Self {
         let mult_w = self.w * rhs.w - self.x * rhs.x - self.y * rhs.y - self.z * rhs.z;
         let mult_x = self.x * rhs.w + self.w * rhs.x - self.z * rhs.y + self.y * rhs.z;
@@ -191,6 +221,9 @@ impl Mul for Quaternion {
 
 impl Mul<f64> for Quaternion {
     type Output = Self;
+
+    /// Scales the quaternion by a scalar value.
+    /// q * s = (ws) + (xs)i + (ys)j + (zs)k
     fn mul(self, rhs: f64) -> Self {
         Self {
             w: self.w * rhs,
@@ -204,7 +237,9 @@ impl Mul<f64> for Quaternion {
 /// Analog to geometry_msgs/msg/Pose in ROS
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Pose {
+    /// Position represented as a Point (x, y, z)
     pub position: Point,
+    /// Orientation represented as a Quaternion (x, y, z, w)
     pub orientation: Quaternion,
 }
 
@@ -238,7 +273,8 @@ impl Pose {
     }
 }
 
-/// Analog to geometry_msgs/msg/PoseStamped in ROS
+/// Analog to geometry_msgs/msg/PoseStamped in ROS.
+/// Combines a Header with a Pose, similar to ROS' geometry_msgs/msg/PoseStamped.
 #[derive(Debug, Clone, PartialEq)]
 pub struct PoseStamped {
     pub header: Header,
@@ -246,9 +282,11 @@ pub struct PoseStamped {
 }
 
 impl PoseStamped {
+    /// Creates a new PoseStamped from a Header and a Pose.
     pub fn new(header: Header, pose: Pose) -> Self {
         Self { header, pose }
     }
+    /// Creates a new PoseStamped from a Header, Point, and Quaternion.
     pub fn from_hpo(header: Header, position: Point, orientation: Quaternion) -> Self {
         Self {
             header,
@@ -341,7 +379,7 @@ impl From<Vec<PoseStamped>> for Path {
     }
 }
 
-/// Round a f64 to i
+/// Round a f64 to the nth decimal place
 pub fn round(num: f64, n: u32) -> f64 {
     let factor: f64 = 10_f64.powf(n.into());
     (num * factor).round() / factor
@@ -382,6 +420,7 @@ mod tests {
     }
 
     #[test]
+    /// Ensures that converting between Duration and Time is consistent.
     fn test_duration_time_conversion() {
         let duration = Duration::new(10, 250_000_000);
         let time: Time = duration.into();
