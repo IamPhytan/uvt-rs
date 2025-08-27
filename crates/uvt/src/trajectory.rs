@@ -3,6 +3,12 @@ use crate::deserialization::BufferReader;
 use crate::pose;
 use std::io;
 
+/// Trait for deserializing Trajectory messages.
+///# Methods
+///* `read_position` - Reads a Point representing position from the buffer.
+///* `read_orientation` - Reads a Quaternion representing orientation from the buffer.
+///* `read_covariance` - Reads a vector of f64 representing covariance from the buffer.
+///* `read_vector` - Reads a Vector3 from the buffer.
 pub trait TrajectoryDeserializer: BufferReader {
     fn read_position(&mut self) -> Result<pose::Point, io::Error>;
     fn read_orientation(&mut self) -> Result<pose::Quaternion, io::Error>;

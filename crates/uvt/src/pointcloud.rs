@@ -5,6 +5,11 @@ use crate::deserialization::{BufferReader, MessageDataBuffer};
 use crate::pose;
 use std::io;
 
+/// Trait for deserializing PointCloud2 messages.
+///# Methods
+///* `read_point_field` - Reads a single PointField from the buffer.
+///* `read_point_fields` - Reads multiple PointFields from the buffer.
+///* `read_data` - Reads the raw point cloud data from the buffer.
 pub trait PointCloud2Deserializer: BufferReader {
     fn read_point_field(&mut self) -> Result<PointField, io::Error>;
     fn read_point_fields(&mut self) -> Result<Vec<PointField>, io::Error>;
