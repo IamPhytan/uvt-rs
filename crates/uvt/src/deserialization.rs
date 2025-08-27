@@ -4,6 +4,7 @@ use std::io::{self, Error, ErrorKind, Write};
 use std::path::Path;
 
 #[derive(Debug, Clone, PartialEq)]
+/// A simple buffer reader for deserializing message data.
 pub struct MessageDataBuffer {
     // Buffer Data
     data: Vec<u8>,
@@ -207,6 +208,17 @@ impl MessageDataBuffer {
     }
 }
 
+/// Trait for reading from a byte buffer.
+///# Methods
+///* `read_u32_le` - Reads a little-endian u32 from the buffer.
+///* `read_f64_le` - Reads a little-endian f64 from the buffer.
+///* `read_byte` - Reads a single byte from the buffer.
+///* `read_byte_aligned` - Reads a single byte from the buffer, aligning to the next specified alignment.
+///* `slice` - Retrieves a slice of bytes from the buffer.
+///* `read_lp_string` - Reads a length-prefixed string from the buffer.
+//* `read_lp_string_aligned` - Reads a length-prefixed string from the buffer, aligning to the next specified alignment.
+///* `read_null_terminated_string` - Reads a null-terminated string from the buffer.
+///* `read_header` - Reads a standard message header from the buffer
 pub trait BufferReader {
     fn read_u32_le(&mut self) -> Result<u32, std::io::Error>;
     fn read_f64_le(&mut self) -> Result<f64, std::io::Error>;

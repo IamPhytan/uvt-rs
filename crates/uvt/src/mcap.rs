@@ -74,8 +74,6 @@ impl BufferReader for McapDeserializer {
     }
 
     fn read_header(&mut self) -> Result<pose::Header, std::io::Error> {
-        // TODO: Remove unwraps
-
         // Ignore first 4 bytes
         // Used in CDR for endianness
         let _ = self.buf.read_u32_le();
@@ -92,6 +90,7 @@ impl BufferReader for McapDeserializer {
 }
 
 impl PointCloud2Deserializer for McapDeserializer {
+    /// Read a single point field
     fn read_point_field(&mut self) -> Result<pointcloud::PointField, std::io::Error> {
         Ok(PointField {
             name: self.read_lp_string_aligned(4)?,
@@ -101,6 +100,7 @@ impl PointCloud2Deserializer for McapDeserializer {
         })
     }
 
+    /// Read all point fields
     fn read_point_fields(&mut self) -> Result<Vec<pointcloud::PointField>, std::io::Error> {
         let n_fields = self.buf.read_u32_le()?;
         let fields = (0..n_fields)
@@ -111,6 +111,7 @@ impl PointCloud2Deserializer for McapDeserializer {
         fields
     }
 
+    /// Read point cloud data
     fn read_data(&mut self) -> Result<Vec<u8>, std::io::Error> {
         // TODO: Rely on fields
         // Point cloud data, size is (row_step*height)
