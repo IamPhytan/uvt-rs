@@ -76,6 +76,11 @@ impl Uvt {
     /// - The file cannot be read
     /// - The VTK or trajectory data is malformed
     /// = The UVT file does not follow the UVT format
+    ///
+    /// # Example
+    /// ```no_run
+    /// let uvt = Uvt::read_file("my_file.uvt").unwrap();
+    /// ```
     pub fn read_file<P: AsRef<path::Path>>(path: P) -> Result<Self, Error> {
         let fpath = path.as_ref();
         let content = fs::read_to_string(fpath)?;
@@ -220,6 +225,11 @@ impl Uvt {
     /// # Errors
     ///
     /// Returns an error if the ROS bag file cannot be read or parsed.
+    ///
+    /// # Example
+    /// ```no_run
+    /// let uvt = Uvt::read_rosbag("my_file.bag", "/map", "/odom").unwrap();
+    /// ```
     pub fn read_rosbag<P: AsRef<path::Path>>(
         path: P,
         map_topic: &str,
@@ -345,6 +355,11 @@ impl Uvt {
     /// # Errors
     ///
     /// Returns an error if the MCAP file cannot be read or parsed.
+    ///
+    /// # Example
+    /// ```no_run
+    /// let uvt = Uvt::read_mcap("my_file.mcap", "/map", "/odom").unwrap();
+    /// ```
     pub fn read_mcap<P: AsRef<path::Path>>(
         path: P,
         map_topic: &str,
