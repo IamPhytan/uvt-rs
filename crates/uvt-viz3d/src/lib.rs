@@ -15,8 +15,6 @@ pub fn show_uvt(uvt_file: uvt::Uvt) {
         }
     };
 
-    println!("N {} pieces", pieces.len());
-
     let points: Vec<uvt::Point> = pieces
         .iter()
         .map(|inline_piece| match inline_piece {
@@ -42,8 +40,6 @@ pub fn show_uvt(uvt_file: uvt::Uvt) {
         })
         .flatten()
         .collect();
-
-    println!("N points {}", points.len());
 
     // Limits of Z
     let zs: Vec<f64> = points.iter().map(|&pt| pt.z).collect();

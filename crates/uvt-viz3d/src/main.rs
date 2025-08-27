@@ -30,7 +30,7 @@ struct Args {
     map_topic: String,
 
     /// Trajectory topic
-    #[clap(long, default_value = "/icp_odom")]
+    #[clap(long, default_value = "/odom")]
     traj_topic: String,
 }
 
