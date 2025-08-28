@@ -24,8 +24,8 @@ The UVT format is an extension of the LTR file format introduced in [_Kilometer-
 This workspace contains 3 crates:
 
 * [`uvt`](https://crates.io/crates/uvt) reads and write UVT files. It can also generate UVT file from `.bag` and `.mcap` files.
-* [`uvt-plot`](https://crates.io/crates/uvt_plot) generates a top view plot of a trajectory.
-* [`uvt-viz3d`](https://crates.io/crates/uvt_viz3d) allows to visualize UVT files in 3D, with [`rerun`](https://rerun.io).
+* [`uvt-plot`](https://crates.io/crates/uvt-plot) generates a top view plot of a trajectory.
+* [`uvt-viz3d`](https://crates.io/crates/uvt-viz3d) allows to visualize UVT files in 3D, with [`rerun`](https://rerun.io).
 
 ```rs
 use std::io;
