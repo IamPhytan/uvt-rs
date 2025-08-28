@@ -1,9 +1,52 @@
+//! # uvt-viz3d
+//!
+//! This crate provides utilities to visualize the content of an _Uncrewed Vehicle Trajectory_ (UVT) file in 3D, using [rerun](https://rerun.io).
+//! The UVT format is an extension of the LTR file format introduced in [_Kilometer-Scale Autonomous Navigation in Subarctic Forests: Challenges and Lessons Learned_](https://doi.org/10.55417/fr.2022050).
+//!
+//! ## Features
+//!
+//! A UVT file contains:
+//!
+//! - A LiDAR map of the environment, stored in the [`VTK` format](https://vtk.org).
+//! - A trajectory recorded by an uncrewed vehicle.
+//!
+//! This crate provides a function to visualize the content of a UVT file in 3D.
+//!
+//! ## Example
+//!
+//! ```rust
+//! use uvt;
+//! use uvt_viz3d;
+//!
+//! // Open a UVT file
+//! let my_uvt = uvt::Uvt::read_file("example.uvt").unwrap();
+//!
+//! // Visualize UVT with rerun
+//! uvt_viz3d::show_uvt(my_uvt);
+//! ```
 use rerun::external::glam;
 use vtkio::model::{DataSet, Piece};
 
 use uvt;
 use vtkio::IOBuffer;
 
+/// Visualizes the content of a UVT file in 3D using rerun.
+///
+/// This function displays the LiDAR map and trajectory data from the UVT file in a 3D viewer.
+///
+/// # Arguments
+///
+/// * `uvt_file` - A `uvt::Uvt` object containing the map and trajectory data.
+///
+/// # Example
+///
+/// ```rust
+/// use uvt;
+/// use uvt_viz3d;
+///
+/// let my_uvt = uvt::Uvt::read_file("example.uvt").unwrap();
+/// uvt_viz3d::show_uvt(my_uvt);
+/// ```
 pub fn show_uvt(uvt_file: uvt::Uvt) {
     let map = uvt_file.map;
     let point_cloud = map.data.clone();

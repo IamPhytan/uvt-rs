@@ -1,3 +1,30 @@
+//! # uvt-plot
+//!
+//! This crate provides utilities for visualizing the content of an _Uncrewed Vehicle Trajectory_ (UVT) file
+//! by plotting a bird-eye view of the recorded trajectory. The UVT format is an extension of the LTR file
+//! format introduced in [_Kilometer-Scale Autonomous Navigation in Subarctic Forests: Challenges and Lessons Learned_](https://doi.org/10.55417/fr.2022050).
+//!
+//! ## Features
+//!
+//! A UVT file contains:
+//!
+//! - A LiDAR map of the environment, stored in the [`VTK` format](https://vtk.org).
+//! - A trajectory recorded by an uncrewed vehicle.
+//!
+//! This crate provides a function to plot the trajectory in a UVT file.
+//!
+//! ## Example
+//!
+//! ```rust
+//! use uvt;
+//! use uvt_plot;
+//!
+//! // Open a UVT file
+//! let my_uvt = uvt::Uvt::read_file("example.uvt").unwrap();
+//!
+//! // Plot trajectory
+//! uvt_plot::plot_trajectory(my_uvt);
+//! ```
 use std::{path::PathBuf, str::FromStr};
 
 use plotters::{
@@ -8,6 +35,26 @@ use plotters::{
 };
 use uvt;
 
+/// Plots the trajectory from a UVT file.
+///
+/// This function generates a bird-eye view of the trajectory recorded in the UVT file
+/// and saves it as a PNG image (`traj.png`) in the current working directory.
+///
+/// # Arguments
+///
+/// * `uvt_file` - A `uvt::Uvt` object containing the trajectory data.
+///
+/// # Example
+///
+/// ```rust
+/// use uvt;
+/// use uvt_plot;
+///
+/// let my_uvt = uvt::Uvt::read_file("example.uvt").unwrap();
+/// uvt_plot::plot_trajectory(my_uvt);
+/// ```
+///
+/// The resulting plot will be saved as `traj.png`.
 pub fn plot_trajectory(uvt_file: uvt::Uvt) {
     let figpath: PathBuf = PathBuf::from_str("traj.png").unwrap();
 
