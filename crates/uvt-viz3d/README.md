@@ -1,11 +1,22 @@
-# uvt-plot
+# uvt-viz3d
 
-[![On crates.io](https://img.shields.io/crates/v/uvt-plot.svg)](https://crates.io/crates/uvt-plot)
-[![On docs.rs](https://docs.rs/uvt-plot/badge.svg)](https://docs.rs/uvt-plot)
+[![On crates.io](https://img.shields.io/crates/v/uvt-viz3d.svg)](https://crates.io/crates/uvt-viz3d)
+[![On docs.rs](https://docs.rs/uvt-viz3d/badge.svg)](https://docs.rs/uvt-viz3d)
 
-![UVT-plot](assets/traj-plot.png)
+<table>
+  <thead>
+    <tr>
+      <td>
+        <img alt="UVT in Rerun" src="assets/rerun01.png" />
+      </td>
+      <td>
+        <img alt="UVT in Rerun" src="assets/rerun02.png" />
+      </td>
+    </tr>
+  </thead>
+</table>
 
-This crate provides utilities for showing the content of an _Uncrewed Vehicle Trajectory_ (UVT) file, by plotting a bird-eye view of the recorded trajectory.
+This crate provides utilities to visualize the content of an _Uncrewed Vehicle Trajectory_ (UVT) file in 3D, with [rerun](https://rerun.io).
 The UVT format is an extension of the LTR file format introduced in [_Kilometer-Scale Autonomous Navigation in Subarctic Forests: Challenges and Lessons Learned_](https://doi.org/10.55417/fr.2022050).
 
 A UVT file contains:
@@ -17,21 +28,23 @@ An example UVT file is available on [Zenodo](https://doi.org/10.5281/zenodo.1692
 
 ## Usage
 
+Since `uvt-viz3d` relies on [`rerun`](https://rerun.io), you might need to install Rerun Viewer. Installations infos are available [here](https://rerun.io/docs/getting-started/installing-viewer)
+
 ### CLI tool
 
-To use `uvt-plot` as a CLI tool, you can install this crate with:
+To use `uvt-viz3d` as a CLI tool, you can install this crate with:
 
 ```sh
-cargo install uvt-plot
+cargo install uvt-viz3d
 ```
 
-You can run `uvt-plot` from the terminal:
+You can run `uvt-viz3d` from the terminal:
 
 ```console
-$ uvt-plot --help
-Utilities for plotting and displaying UVT data.
+$ uvt-viz3d --help
+Utilities for visualizing UVT data in 3D
 
-Usage: uvt-plot [OPTIONS] --input-file <INPUT_FILE>
+Usage: uvt-viz3d [OPTIONS] --input-file <INPUT_FILE>
 
 Options:
   -i, --input-file <INPUT_FILE>  Input file path
@@ -42,41 +55,41 @@ Options:
   -V, --version                  Print version
 ```
 
-`uvt-plot` can be used with `.uvt` files and with rosbags, both with ROS (`.bag`) and with ROS 2 (`.mcap`):
+`uvt-viz3d` can be used with `.uvt` files and with rosbags, both with ROS (`.bag`) and with ROS 2 (`.mcap`):
 
 ```sh
 # With a UVT file
-uvt-plot -- --input-file example.uvt
+uvt-viz3d -- --input-file example.uvt
 
 # With a ROS bag file
-uvt-plot -- --input-file example.bag --m rosbag --map-topic /my-map-topic --traj-topic /my-traj-topic
+uvt-viz3d -- --input-file example.bag --m rosbag --map-topic /my-map-topic --traj-topic /my-traj-topic
 
 # With a ROS MCAP file
-uvt-plot -- --input-file example.mcap --m mcap --map-topic /my-map-topic --traj-topic /my-traj-topic
+uvt-viz3d -- --input-file example.mcap --m mcap --map-topic /my-map-topic --traj-topic /my-traj-topic
 ```
 
 ### Library
 
-To use `uvt-plot` as a library, simply add the crate name to your `Cargo.toml` file:
+To use `uvt-viz3d` as a library, simply add the crate name to your `Cargo.toml` file:
 
 ```rust
 [dependencies]
-uvt-plot = "0.1"
+uvt-viz3d = "0.1"
 ```
 
-`uvt-plot` provides a function to plot the trajectory in a UVT file:
+`uvt-viz3d` provides a function to visualize the content of a UVT file:
 
 ```rs
 use std::io;
 use uvt;
-use uvt_plot;
+use uvt_viz3d;
 
 fn main() -> Result<(), io::Error> {
     // Open a UVT file
     let my_uvt = uvt::Uvt::read_file("example.uvt")?;
 
-    // Plot trajectory
-    uvt_plot::plot_trajectory(my_uvt);
+    // Visualize uvt with rerun
+    uvt_viz3d::show_uvt(my_uvt);
 
     Ok(())
 }

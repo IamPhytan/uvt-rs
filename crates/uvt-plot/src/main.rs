@@ -49,5 +49,5 @@ fn main() {
     }
     .unwrap();
 
-    crate::uvt_plot::plot_trajectory(uv_traj);
+    uvt_plot::plot_trajectory(uv_traj);
 }

@@ -49,5 +49,5 @@ fn main() {
     }
     .unwrap();
 
-    crate::uvt_viz3d::show_uvt(uv_traj);
+    uvt_viz3d::show_uvt(uv_traj);
 }
