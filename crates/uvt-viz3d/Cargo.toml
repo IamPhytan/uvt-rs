@@ -1,7 +1,7 @@
 [package]
 name = "uvt-viz3d"
 description = "Utilities for visualizing UVT data in 3D"
-version = "0.1.0"
+version = { workspace = true }
 edition = { workspace = true }
 authors = { workspace = true }
 repository = { workspace = true }
