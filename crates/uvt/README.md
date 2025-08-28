@@ -1,5 +1,8 @@
 # uvt
 
+[![On crates.io](https://img.shields.io/crates/v/uvt.svg)](https://crates.io/crates/uvt)
+[![On docs.rs](https://docs.rs/uvt/badge.svg)](https://docs.rs/uvt)
+
 This crate provides utilities for reading and writing files in the _Uncrewed Vehicle Trajectory_ (UVT) format.
 The UVT format is an extension of the LTR file format introduced in [_Kilometer-Scale Autonomous Navigation in Subarctic Forests: Challenges and Lessons Learned_](https://doi.org/10.55417/fr.2022050).
 
@@ -8,7 +11,7 @@ A UVT file contains:
 - a LiDAR map of the environment, stored in the [`VTK` format](https://vtk.org).
 - A trajectory recorded by an uncrewed vehicle.
 
-An example UVT file is avilable on [Zenodo](https://doi.org/10.5281/zenodo.16928365).
+An example UVT file is available on [Zenodo](https://doi.org/10.5281/zenodo.16928365).
 
 ## Features
 
@@ -22,7 +25,18 @@ This crate:
 
 ---
 
+## Usage
+
+To use this library simply add the crate name to your `Cargo.toml` file:
+
+```rust
+[dependencies]
+uvt = "0.1"
+```
+
 ## Examples
+
+### Import / Export
 
 This crate allows to read, parse, and write uncrewed vehicle trajectories saved in the `UVT` format.
 
@@ -56,6 +70,8 @@ fn main() -> Result<(), io::Error> {
     Ok(())
 }
 ```
+
+### Generation from rosbags
 
 You can also generate a UVT file from rosbags, be it in ROS (1) (`.bag`) or in ROS 2 (`.mcap`).
 Your rosbag must contain:
