@@ -1,17 +1,15 @@
 use clap::Parser;
 use std::path::PathBuf;
 
-use uvt_plot;
-
 #[derive(clap::ValueEnum, Parser, Clone, Default, Debug)]
 enum Mode {
     // UVT file
     #[default]
-    UVT,
+    Uvt,
     // Rosbag file
     Rosbag,
     // MCAP file
-    MCAP,
+    Mcap,
 }
 
 #[derive(Parser, Debug)]
@@ -43,9 +41,9 @@ fn main() {
     }
 
     let uv_traj = match args.mode {
-        Mode::UVT => uvt::Uvt::read_file(args.input_file),
+        Mode::Uvt => uvt::Uvt::read_file(args.input_file),
         Mode::Rosbag => uvt::Uvt::read_rosbag(args.input_file, &args.map_topic, &args.traj_topic),
-        Mode::MCAP => uvt::Uvt::read_mcap(args.input_file, &args.map_topic, &args.traj_topic),
+        Mode::Mcap => uvt::Uvt::read_mcap(args.input_file, &args.map_topic, &args.traj_topic),
     }
     .unwrap();
 

@@ -75,7 +75,7 @@ impl Uvt {
     /// Returns an error if:
     /// - The file cannot be read
     /// - The VTK or trajectory data is malformed
-    /// = The UVT file does not follow the UVT format
+    /// - The UVT file does not follow the UVT format
     ///
     /// # Example
     /// ```no_run
@@ -97,8 +97,7 @@ impl Uvt {
         let vtk_str = content[..delimiter].trim();
         let traj_str = content[delimiter + TRAJ_DELIM.len()..].trim();
 
-        let vtk_file =
-            Vtk::parse_legacy_be(vtk_str.as_bytes()).expect(&format!("Failed to parse vtk"));
+        let vtk_file = Vtk::parse_legacy_be(vtk_str.as_bytes()).expect("Failed to parse vtk");
 
         let frame_id = traj_str
             .lines()
@@ -150,7 +149,7 @@ impl Uvt {
 
         Ok(Self {
             map: vtk_file,
-            trajectory: trajectory,
+            trajectory,
         })
     }
 
@@ -166,7 +165,7 @@ impl Uvt {
     /// # Returns
     ///
     /// A vector of message data as byte vectors.
-    fn retrieve_topic_messages<'a>(bag: &'a RosBag, topic: &str) -> Vec<Vec<u8>> {
+    fn retrieve_topic_messages(bag: &RosBag, topic: &str) -> Vec<Vec<u8>> {
         let connections: Vec<_> = bag
             .index_records()
             .filter_map(Result::ok)
@@ -190,7 +189,7 @@ impl Uvt {
                 ChunkRecord::Chunk(chunk) => Some(chunk),
                 _ => None,
             })
-            .map(|chunk| {
+            .flat_map(|chunk| {
                 chunk
                     .messages()
                     .filter_map(Result::ok)
@@ -202,7 +201,6 @@ impl Uvt {
                     .map(|msg| msg.data.to_vec())
                     .collect::<Vec<Vec<u8>>>()
             })
-            .flatten()
             .collect();
         topic_msgs
     }
@@ -279,11 +277,8 @@ impl Uvt {
         let last_pcloud = pointclouds[pointclouds.len() - 1].clone();
         let pts: Vec<f32> = last_pcloud
             .par_iter()
-            .map(|&pt| Into::<[f32; 3]>::into(pt))
-            .flatten()
-            .collect::<Vec<f32>>()
-            .try_into()
-            .unwrap();
+            .flat_map(|&pt| Into::<[f32; 3]>::into(pt))
+            .collect::<Vec<f32>>();
         let data = vtkio::model::DataSet::inline(vtkio::model::PolyDataPiece {
             points: vtkio::IOBuffer::F32(pts),
             verts: None,
@@ -296,14 +291,14 @@ impl Uvt {
         let map_vtk = Vtk {
             version: vtkio::model::Version { major: 3, minor: 0 },
             byte_order: vtkio::model::ByteOrder::BigEndian,
-            title: String::from(format!("UVT file generated from {}", fname)),
+            title: format!("UVT file generated from {}", fname),
             file_path: None,
-            data: data,
+            data,
         };
 
         Ok(Self {
             map: map_vtk,
-            trajectory: trajectory,
+            trajectory,
         })
     }
 
@@ -320,9 +315,9 @@ impl Uvt {
     /// # Returns
     ///
     /// A vector of message data as byte vectors.
-    fn retrieve_mcap_topic_messages<'a>(mcap_map: &Mmap, topic: &str) -> Vec<Vec<u8>> {
-        let messages = mcap_crate::MessageStream::new(&mcap_map).unwrap();
-        let topic_msgs = messages
+    fn retrieve_mcap_topic_messages(mcap_map: &Mmap, topic: &str) -> Vec<Vec<u8>> {
+        let messages = mcap_crate::MessageStream::new(mcap_map).unwrap();
+        messages
             .into_iter()
             .filter_map(|stream_msg| {
                 let msg = stream_msg.unwrap();
@@ -333,8 +328,7 @@ impl Uvt {
                     None
                 }
             })
-            .collect();
-        topic_msgs
+            .collect()
     }
 
     /// Reads an MCAP file and extracts UVT data.
@@ -410,11 +404,8 @@ impl Uvt {
         let last_pcloud = pointclouds[pointclouds.len() - 1].clone();
         let pts: Vec<f32> = last_pcloud
             .par_iter()
-            .map(|&pt| Into::<[f32; 3]>::into(pt))
-            .flatten()
-            .collect::<Vec<f32>>()
-            .try_into()
-            .unwrap();
+            .flat_map(|&pt| Into::<[f32; 3]>::into(pt))
+            .collect::<Vec<f32>>();
         let data = vtkio::model::DataSet::inline(vtkio::model::PolyDataPiece {
             points: vtkio::IOBuffer::F32(pts),
             verts: None,
@@ -427,14 +418,14 @@ impl Uvt {
         let map_vtk = Vtk {
             version: vtkio::model::Version { major: 3, minor: 0 },
             byte_order: vtkio::model::ByteOrder::BigEndian,
-            title: String::from(format!("UVT file generated from {}", fname)),
+            title: format!("UVT file generated from {}", fname),
             file_path: None,
-            data: data,
+            data,
         };
 
         Ok(Self {
             map: map_vtk,
-            trajectory: trajectory,
+            trajectory,
         })
     }
 
@@ -458,8 +449,7 @@ impl Uvt {
         // Map
         //
         let mut map_str = String::new();
-        Vtk::write_legacy_ascii(self.map.clone(), &mut map_str)
-            .expect(&format!("Failed to write file"));
+        Vtk::write_legacy_ascii(self.map.clone(), &mut map_str).expect("Failed to write file");
 
         //
         // Trajectory
@@ -490,7 +480,7 @@ impl Uvt {
             })
             .collect();
         let traj_str = traj_poses.join("\n");
-        let uvt_str = vec![map_str, TRAJ_DELIM.to_string(), frame_str, traj_str].join("\n");
+        let uvt_str = [map_str, TRAJ_DELIM.to_string(), frame_str, traj_str].join("\n");
 
         fs::write(export_path, uvt_str)?;
 

@@ -53,10 +53,10 @@ pub fn parse_trajectory<D: TrajectoryDeserializer>(
     let _twist_covariance = d.read_covariance()?;
 
     Ok(pose::PoseStamped {
-        header: header,
+        header,
         pose: pose::Pose {
-            position: position,
-            orientation: orientation,
+            position,
+            orientation,
         },
     })
 }

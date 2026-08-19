@@ -33,7 +33,6 @@ use plotters::{
     series::LineSeries,
     style::{RED, WHITE},
 };
-use uvt;
 
 /// Plots the trajectory from a UVT file.
 ///
@@ -68,40 +67,34 @@ pub fn plot_trajectory(uvt_file: uvt::Uvt) {
     let (xs, ys): (Vec<f64>, Vec<f64>) = positions.iter().map(|pt| (pt.0, pt.1)).unzip();
     let zs: Vec<f64> = positions.iter().map(|pt| pt.2).collect();
 
-    let x_max = xs
+    let x_max = *xs
         .iter()
         .max_by(|&a, &b| a.partial_cmp(b).unwrap())
-        .unwrap()
-        .clone();
-    let x_min = xs
+        .unwrap();
+    let x_min = *xs
         .iter()
         .min_by(|&a, &b| a.partial_cmp(b).unwrap())
-        .unwrap()
-        .clone();
-    let y_max = ys
+        .unwrap();
+    let y_max = *ys
         .iter()
         .max_by(|&a, &b| a.partial_cmp(b).unwrap())
-        .unwrap()
-        .clone();
-    let y_min = ys
+        .unwrap();
+    let y_min = *ys
         .iter()
         .min_by(|&a, &b| a.partial_cmp(b).unwrap())
-        .unwrap()
-        .clone();
-    let z_max = zs
+        .unwrap();
+    let z_max = *zs
         .iter()
         .max_by(|&a, &b| a.partial_cmp(b).unwrap())
-        .unwrap()
-        .clone();
-    let z_min = zs
+        .unwrap();
+    let z_min = *zs
         .iter()
         .min_by(|&a, &b| a.partial_cmp(b).unwrap())
-        .unwrap()
-        .clone();
+        .unwrap();
 
     let x_span = (x_min, x_max);
     let y_span = (y_min, y_max);
-    let z_span = (z_min, z_max);
+    let _z_span = (z_min, z_max);
 
     let fig = BitMapBackend::new(figpath.as_os_str(), (800, 600)).into_drawing_area();
     fig.fill(&WHITE).unwrap();
@@ -121,7 +114,7 @@ pub fn plot_trajectory(uvt_file: uvt::Uvt) {
         (-100..100)
             .map(|y| y as f64 / 100.0)
             .map(|y| ((y * 10.0).sin(), y)),
-        &RED,
+        RED,
     ))
     .unwrap();
 
@@ -129,7 +122,7 @@ pub fn plot_trajectory(uvt_file: uvt::Uvt) {
         positions
             .into_iter()
             .map(|(x, y, _)| (x, y))
-            .map(|pt| Circle::new(pt, 1, &RED)),
+            .map(|pt| Circle::new(pt, 1, RED)),
     )
     .unwrap();
 

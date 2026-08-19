@@ -27,7 +27,6 @@
 use rerun::external::glam;
 use vtkio::model::{DataSet, Piece};
 
-use uvt;
 use vtkio::IOBuffer;
 
 /// Visualizes the content of a UVT file in 3D using rerun.
@@ -60,7 +59,7 @@ pub fn show_uvt(uvt_file: uvt::Uvt) {
 
     let points: Vec<uvt::Point> = pieces
         .iter()
-        .map(|inline_piece| match inline_piece {
+        .flat_map(|inline_piece| match inline_piece {
             Piece::Inline(piece) => {
                 let piece_buf_points = piece.points.clone();
                 let buf_values = match piece_buf_points {
@@ -72,7 +71,7 @@ pub fn show_uvt(uvt_file: uvt::Uvt) {
                 let n_points = piece.num_points();
                 let piece_points: Vec<uvt::Point> = (0..n_points)
                     .into_iter()
-                    .map(|i| (3 * i + 0, 3 * i + 1, 3 * i + 2))
+                    .map(|i| (3 * i, 3 * i + 1, 3 * i + 2))
                     .map(|(idx_x, idx_y, idx_z)| {
                         uvt::Point::new(buf_values[idx_x], buf_values[idx_y], buf_values[idx_z])
                     })
@@ -81,21 +80,18 @@ pub fn show_uvt(uvt_file: uvt::Uvt) {
             }
             _ => panic!("Unknown piece type"),
         })
-        .flatten()
         .collect();
 
     // Limits of Z
     let zs: Vec<f64> = points.iter().map(|&pt| pt.z).collect();
-    let z_min = zs
+    let z_min = *zs
         .iter()
         .min_by(|&a, &b| a.partial_cmp(b).unwrap())
-        .unwrap()
-        .clone();
-    let z_max = zs
+        .unwrap();
+    let z_max = *zs
         .iter()
         .max_by(|&a, &b| a.partial_cmp(b).unwrap())
-        .unwrap()
-        .clone();
+        .unwrap();
 
     // Colors
     let colors: Vec<[u8; 4]> = points
@@ -114,16 +110,11 @@ pub fn show_uvt(uvt_file: uvt::Uvt) {
     // Log map
     rec.log_static(
         "/map",
-        &rerun::Points3D::new(
-            points
-                .iter()
-                .map(|&pt| {
-                    let coords: [f32; 3] = pt.into();
-                    let vec_pt: glam::Vec3 = coords.into();
-                    vec_pt
-                })
-                .into_iter(),
-        )
+        &rerun::Points3D::new(points.iter().map(|&pt| {
+            let coords: [f32; 3] = pt.into();
+            let vec_pt: glam::Vec3 = coords.into();
+            vec_pt
+        }))
         .with_colors(colors)
         .with_radii([0.08]),
     )
@@ -138,17 +129,11 @@ pub fn show_uvt(uvt_file: uvt::Uvt) {
 
     rec.log_static(
         "/trajectory",
-        &rerun::Points3D::new(
-            uvt_file
-                .trajectory
-                .iter()
-                .map(|pt| {
-                    let coords: [f32; 3] = pt.pose.position.into();
-                    let vec_pt: glam::Vec3 = coords.into();
-                    vec_pt
-                })
-                .into_iter(),
-        )
+        &rerun::Points3D::new(uvt_file.trajectory.iter().map(|pt| {
+            let coords: [f32; 3] = pt.pose.position.into();
+            let vec_pt: glam::Vec3 = coords.into();
+            vec_pt
+        }))
         .with_colors(red)
         .with_radii([0.25]),
     )

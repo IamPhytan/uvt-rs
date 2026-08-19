@@ -78,18 +78,18 @@ impl Point {
     }
 }
 
-impl Into<[f32; 3]> for Point {
-    fn into(self) -> [f32; 3] {
-        [self.x as f32, self.y as f32, self.z as f32]
+impl From<Point> for [f32; 3] {
+    fn from(val: Point) -> Self {
+        [val.x as f32, val.y as f32, val.z as f32]
     }
 }
 
 /// Conversion from Point to glam::Vec3 if the "glam-support" feature is enabled.
 /// Used to show point clouds in rerun.
 #[cfg(feature = "glam-support")]
-impl Into<glam::Vec3> for Point {
-    fn into(self) -> glam::Vec3 {
-        glam::Vec3::new(self.x as f32, self.y as f32, self.z as f32)
+impl From<Point> for glam::Vec3 {
+    fn from(val: Point) -> Self {
+        glam::Vec3::new(val.x as f32, val.y as f32, val.z as f32)
     }
 }
 
@@ -114,9 +114,9 @@ impl From<quat::Quaternion<f64>> for Quaternion {
     }
 }
 
-impl Into<quat::Quaternion<f64>> for Quaternion {
-    fn into(self) -> quat::Quaternion<f64> {
-        (self.w, [self.x, self.y, self.z])
+impl From<Quaternion> for quat::Quaternion<f64> {
+    fn from(val: Quaternion) -> Self {
+        (val.w, [val.x, val.y, val.z])
     }
 }
 
@@ -164,7 +164,7 @@ impl Quaternion {
         if norm == 0.0 {
             panic!("Cannot normalize a quaternion with zero norm");
         }
-        self.clone() * (1.0 / norm)
+        *self * (1.0 / norm)
     }
 }
 
@@ -298,9 +298,9 @@ impl PoseStamped {
     }
 }
 
-impl Into<Pose> for PoseStamped {
-    fn into(self) -> Pose {
-        self.pose
+impl From<PoseStamped> for Pose {
+    fn from(val: PoseStamped) -> Self {
+        val.pose
     }
 }
 
@@ -368,6 +368,10 @@ pub struct Path {
 impl Path {
     pub fn len(&self) -> usize {
         self.poses.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 }
 

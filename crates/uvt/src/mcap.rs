@@ -103,12 +103,7 @@ impl PointCloud2Deserializer for McapDeserializer {
     /// Read all point fields
     fn read_point_fields(&mut self) -> Result<Vec<pointcloud::PointField>, std::io::Error> {
         let n_fields = self.buf.read_u32_le()?;
-        let fields = (0..n_fields)
-            .into_iter()
-            .map(|_| self.read_point_field())
-            .into_iter()
-            .collect();
-        fields
+        (0..n_fields).map(|_| self.read_point_field()).collect()
     }
 
     /// Read point cloud data
@@ -154,11 +149,7 @@ impl TrajectoryDeserializer for McapDeserializer {
     /// 6 x 6 covariance matrix = 36 covariance values
     /// https://docs.ros.org/en/noetic/api/geometry_msgs/html/msg/PoseWithCovarianceStamped.html
     fn read_covariance(&mut self) -> Result<Vec<f64>, std::io::Error> {
-        (0..36)
-            .into_iter()
-            .map(|_| self.buf.read_f64_le())
-            .into_iter()
-            .collect()
+        (0..36).map(|_| self.buf.read_f64_le()).collect()
     }
 
     /// Read a twist vector

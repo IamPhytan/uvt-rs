@@ -44,10 +44,10 @@ impl BufferReader for BagDeserializer {
 
     fn read_header(&mut self) -> Result<pose::Header, std::io::Error> {
         Ok(pose::Header {
-            seq: self.buf.read_u32_le()?.clone(),
+            seq: self.buf.read_u32_le()?,
             stamp: pose::Time {
-                sec: self.buf.read_i32_le()?.clone(),
-                nanosec: self.buf.read_u32_le()?.clone(),
+                sec: self.buf.read_i32_le()?,
+                nanosec: self.buf.read_u32_le()?,
             },
             frame_id: self.read_lp_string()?,
         })
@@ -66,12 +66,7 @@ impl PointCloud2Deserializer for BagDeserializer {
 
     fn read_point_fields(&mut self) -> Result<Vec<PointField>, std::io::Error> {
         let n_fields = self.buf.read_u32_le()?;
-        let fields = (0..n_fields)
-            .into_iter()
-            .map(|_| self.read_point_field())
-            .into_iter()
-            .collect();
-        fields
+        (0..n_fields).map(|_| self.read_point_field()).collect()
     }
 
     fn read_data(&mut self) -> Result<Vec<u8>, std::io::Error> {
@@ -113,11 +108,7 @@ impl TrajectoryDeserializer for BagDeserializer {
     /// 6 x 6 covariance matrix = 36 covariance values
     /// https://docs.ros.org/en/noetic/api/geometry_msgs/html/msg/PoseWithCovarianceStamped.html
     fn read_covariance(&mut self) -> Result<Vec<f64>, std::io::Error> {
-        (0..36)
-            .into_iter()
-            .map(|_| self.buf.read_f64_le())
-            .into_iter()
-            .collect()
+        (0..36).map(|_| self.buf.read_f64_le()).collect()
     }
     fn read_vector(&mut self) -> Result<pose::Vector3, std::io::Error> {
         Ok(pose::Vector3::new(

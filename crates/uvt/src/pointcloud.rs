@@ -109,14 +109,14 @@ impl PointCloud2 {
     }
 
     pub fn points(&self) -> Vec<HashMap<String, f64>> {
-        let pt_len = self.point_step as usize;
+        let _pt_len = self.point_step as usize;
 
         // Use a MessageDataBuffer to deserialize data
         let mut data_buf = MessageDataBuffer::new(self.data.to_vec());
 
-        let points = (0..self.n_points())
+        (0..self.n_points())
             .into_iter()
-            .map(|i| {
+            .map(|_| {
                 // Create point from fields
                 let mut point = HashMap::new();
                 for field in &self.fields {
@@ -130,15 +130,13 @@ impl PointCloud2 {
                 }
                 point
             })
-            .collect();
-
-        points
+            .collect()
     }
 }
 
-impl Into<Vec<pose::Point>> for PointCloud2 {
-    fn into(self) -> Vec<pose::Point> {
-        let points = self.points();
+impl From<PointCloud2> for Vec<pose::Point> {
+    fn from(val: PointCloud2) -> Self {
+        let points = val.points();
         points
             .iter()
             .map(|pt_hashmap| pose::Point {
